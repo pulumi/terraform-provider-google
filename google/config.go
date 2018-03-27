@@ -52,7 +52,7 @@ type Config struct {
 	client    *http.Client
 	userAgent string
 
-	clientBilling                *cloudbilling.Service
+	clientBilling                *cloudbilling.APIService
 	clientCompute                *compute.Service
 	clientComputeBeta            *computeBeta.Service
 	clientContainer              *container.Service

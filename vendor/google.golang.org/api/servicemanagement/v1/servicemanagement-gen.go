@@ -283,7 +283,7 @@ func (s *Api) MarshalJSON() ([]byte, error) {
 // log_types
 // specified in each AuditConfig are enabled, and the exempted_members
 // in each
-// AuditConfig are exempted.
+// AuditLogConfig are exempted.
 //
 // Example Policy with multiple AuditConfigs:
 //
@@ -333,8 +333,6 @@ type AuditConfig struct {
 	// permission.
 	// Next ID: 4
 	AuditLogConfigs []*AuditLogConfig `json:"auditLogConfigs,omitempty"`
-
-	ExemptedMembers []string `json:"exemptedMembers,omitempty"`
 
 	// Service: Specifies a service that will be enabled for audit
 	// logging.
@@ -933,7 +931,8 @@ type Binding struct {
 	// binding. Different bindings, including their conditions, are
 	// examined
 	// independently.
-	// This field is GOOGLE_INTERNAL.
+	// This field is only visible as GOOGLE_INTERNAL or
+	// CONDITION_TRUSTED_TESTER.
 	Condition *Expr `json:"condition,omitempty"`
 
 	// Members: Specifies the identities requesting access for a Cloud
@@ -2158,88 +2157,6 @@ func (s *Field) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// FlowOperationMetadata: The metadata associated with a long running
-// operation resource.
-type FlowOperationMetadata struct {
-	// CancelState: The state of the operation with respect to cancellation.
-	//
-	// Possible values:
-	//   "RUNNING" - Default state, cancellable but not cancelled.
-	//   "UNCANCELLABLE" - The operation has proceeded past the point of no
-	// return and cannot
-	// be cancelled.
-	//   "CANCELLED" - The operation has been cancelled, work should
-	// cease
-	// and any needed rollback steps executed.
-	CancelState string `json:"cancelState,omitempty"`
-
-	// Deadline: Deadline for the flow to complete, to prevent orphaned
-	// Operations.
-	//
-	// If the flow has not completed by this time, it may be terminated
-	// by
-	// the engine, or force-failed by Operation lookup.
-	//
-	// Note that this is not a hard deadline after which the Flow
-	// will
-	// definitely be failed, rather it is a deadline after which it is
-	// reasonable
-	// to suspect a problem and other parts of the system may kill
-	// operation
-	// to ensure we don't have orphans.
-	// see also: go/prevent-orphaned-operations
-	Deadline string `json:"deadline,omitempty"`
-
-	// FlowName: The name of the top-level flow corresponding to this
-	// operation.
-	// Must be equal to the "name" field for a FlowName enum.
-	FlowName string `json:"flowName,omitempty"`
-
-	// OperationType: Operation type which is a flow type and subtype info
-	// as that is missing in
-	// our datastore otherwise. This maps to the ordinal value of the
-	// enum:
-	// jcg/api/tenant/operations/OperationNamespace.java
-	OperationType int64 `json:"operationType,omitempty"`
-
-	// ResourceNames: The full name of the resources that this flow is
-	// directly associated with.
-	ResourceNames []string `json:"resourceNames,omitempty"`
-
-	// StartTime: The start time of the operation.
-	StartTime string `json:"startTime,omitempty"`
-
-	// Possible values:
-	//   "UNSPECIFIED_OP_SERVICE"
-	//   "SERVICE_MANAGEMENT"
-	//   "SERVICE_USAGE"
-	//   "SERVICE_CONSUMER_MANAGEMENT" - TenancyUnit, ServiceNetworking fall
-	// under this
-	Surface string `json:"surface,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "CancelState") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "CancelState") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *FlowOperationMetadata) MarshalJSON() ([]byte, error) {
-	type NoMethod FlowOperationMetadata
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
 // GenerateConfigReportRequest: Request message for GenerateConfigReport
 // method.
 type GenerateConfigReportRequest struct {
@@ -2707,17 +2624,6 @@ type HttpRule struct {
 
 	// Put: Used for updating a resource.
 	Put string `json:"put,omitempty"`
-
-	// ResponseBody: The name of the response field whose value is mapped to
-	// the HTTP body of
-	// response. Other response fields are ignored. This field is optional.
-	// When
-	// not set, the response message will be used as HTTP body of
-	// response.
-	// NOTE: the referred field must be not a repeated field and must be
-	// present
-	// at the top-level of response message type.
-	ResponseBody string `json:"responseBody,omitempty"`
 
 	// Selector: Selects methods to which this rule applies.
 	//
@@ -3427,8 +3333,6 @@ type MetricDescriptor struct {
 	//
 	// **Grammar**
 	//
-	// The grammar includes the dimensionless unit `1`, such as `1/s`.
-	//
 	// The grammar also includes these connectors:
 	//
 	// * `/`    division (as an infix operator, e.g. `1/s`).
@@ -3438,7 +3342,7 @@ type MetricDescriptor struct {
 	//
 	//     Expression = Component { "." Component } { "/" Component } ;
 	//
-	//     Component = [ PREFIX ] UNIT [ Annotation ]
+	//     Component = ( [ PREFIX ] UNIT | "%" ) [ Annotation ]
 	//               | Annotation
 	//               | "1"
 	//               ;
@@ -3452,6 +3356,10 @@ type MetricDescriptor struct {
 	//    `{requests}/s == 1/s`, `By{transmitted}/s == By/s`.
 	// * `NAME` is a sequence of non-blank printable ASCII characters not
 	//    containing '{' or '}'.
+	// * `1` represents dimensionless value 1, such as in `1/s`.
+	// * `%` represents dimensionless value 1/100, and annotates values
+	// giving
+	//    a percentage.
 	Unit string `json:"unit,omitempty"`
 
 	// ValueType: Whether the measurement is an integer, a floating-point
@@ -4177,7 +4085,7 @@ func (s *Page) MarshalJSON() ([]byte, error) {
 //     }
 //
 // For a description of IAM and its features, see the
-// [IAM developer's guide](https://cloud.google.com/iam).
+// [IAM developer's guide](https://cloud.google.com/iam/docs).
 type Policy struct {
 	// AuditConfigs: Specifies cloud audit logging configuration for this
 	// policy.
@@ -4207,9 +4115,7 @@ type Policy struct {
 	// policy is overwritten blindly.
 	Etag string `json:"etag,omitempty"`
 
-	IamOwned bool `json:"iamOwned,omitempty"`
-
-	// Version: Version of the `Policy`. The default version is 0.
+	// Version: Deprecated.
 	Version int64 `json:"version,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
