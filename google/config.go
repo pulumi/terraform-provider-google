@@ -52,7 +52,8 @@ type Config struct {
 	client    *http.Client
 	userAgent string
 
-	clientBilling                *cloudbilling.APIService
+	// TODO: Current version of cloudBilling APIs changed Service to APIService.
+	clientBilling                *cloudbilling.APIService 
 	clientCompute                *compute.Service
 	clientComputeBeta            *computeBeta.Service
 	clientContainer              *container.Service
