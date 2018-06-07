@@ -121,7 +121,11 @@ func (u *ComputeSubnetworkIamUpdater) SetResourceIamPolicy(policy *cloudresource
 		return errwrap.Wrapf(fmt.Sprintf("Invalid IAM policy for %s: {{err}}", u.DescribeResource()), err)
 	}
 
-	_, err = u.Config.clientComputeBeta.Subnetworks.SetIamPolicy(u.project, u.region, u.resourceId, computePolicy).Do()
+	request := computeBeta.RegionSetPolicyRequest{
+		Policy: computePolicy,
+	}
+
+	_, err = u.Config.clientComputeBeta.Subnetworks.SetIamPolicy(u.project, u.region, u.resourceId, &request).Do()
 
 	if err != nil {
 		return errwrap.Wrapf(fmt.Sprintf("Error setting IAM policy for %s: {{err}}", u.DescribeResource()), err)
