@@ -63,6 +63,11 @@ func TestAccComputeFirewall_update(t *testing.T) {
 					testAccCheckComputeFirewallApiVersion(&firewall),
 				),
 			},
+			{
+				ResourceName:      "google_compute_firewall.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 			resource.TestStep{
 				Config: testAccComputeFirewall_update(networkName, firewallName),
 				Check: resource.ComposeTestCheckFunc(
@@ -72,6 +77,24 @@ func TestAccComputeFirewall_update(t *testing.T) {
 						&firewall, "80-255"),
 					testAccCheckComputeFirewallApiVersion(&firewall),
 				),
+			},
+			{
+				ResourceName:      "google_compute_firewall.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			resource.TestStep{
+				Config: testAccComputeFirewall_basic(networkName, firewallName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckComputeFirewallExists(
+						"google_compute_firewall.foobar", &firewall),
+					testAccCheckComputeFirewallApiVersion(&firewall),
+				),
+			},
+			{
+				ResourceName:      "google_compute_firewall.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -219,6 +242,37 @@ func TestAccComputeFirewall_serviceAccounts(t *testing.T) {
 					testAccCheckComputeFirewallServiceAccounts(sourceSaEmail, targetSaEmail, &firewall),
 					testAccCheckComputeFirewallApiVersion(&firewall),
 				),
+			},
+			resource.TestStep{
+				ResourceName:      "google_compute_firewall.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccComputeFirewall_disabled(t *testing.T) {
+	t.Parallel()
+
+	networkName := fmt.Sprintf("firewall-test-%s", acctest.RandString(10))
+	firewallName := fmt.Sprintf("firewall-test-%s", acctest.RandString(10))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckComputeFirewallDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccComputeFirewall_disabled(networkName, firewallName),
+			},
+			resource.TestStep{
+				ResourceName:      "google_compute_firewall.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			resource.TestStep{
+				Config: testAccComputeFirewall_basic(networkName, firewallName),
 			},
 			resource.TestStep{
 				ResourceName:      "google_compute_firewall.foobar",
@@ -423,6 +477,7 @@ func testAccComputeFirewall_update(network, firewall string) string {
 		description = "Resource created for Terraform acceptance testing"
 		network = "${google_compute_network.foobar.self_link}"
 		source_tags = ["foo"]
+		target_tags = ["bar"]
 
 		allow {
 			protocol = "tcp"
@@ -540,4 +595,26 @@ func testAccComputeFirewall_serviceAccounts(sourceSa, targetSa, network, firewal
 		source_service_accounts = ["${google_service_account.source.email}"]
 		target_service_accounts = ["${google_service_account.target.email}"]
 	}`, sourceSa, targetSa, network, firewall)
+}
+
+func testAccComputeFirewall_disabled(network, firewall string) string {
+	return fmt.Sprintf(`
+	resource "google_compute_network" "foobar" {
+		name = "%s"
+		auto_create_subnetworks = false
+		ipv4_range = "10.0.0.0/16"
+	}
+
+	resource "google_compute_firewall" "foobar" {
+		name = "firewall-test-%s"
+		description = "Resource created for Terraform acceptance testing"
+		network = "${google_compute_network.foobar.name}"
+		source_tags = ["foo"]
+
+		allow {
+			protocol = "icmp"
+		}
+
+		disabled = true
+	}`, network, firewall)
 }

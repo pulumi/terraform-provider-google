@@ -68,8 +68,6 @@ The following arguments are supported:
 
 - - -
 
-* `connection_name` - (Optional) The connection name of the instance to be used in connection strings.
-
 * `database_version` - (Optional, Default: `MYSQL_5_6`) The MySQL version to
     use. Can be `MYSQL_5_6`, `MYSQL_5_7` or `POSTGRES_9_6` for second-generation
     instances, or `MYSQL_5_5` or `MYSQL_5_6` for first-generation instances.
@@ -123,6 +121,8 @@ The required `settings` block supports:
 
 * `replication_type` - (Optional) Replication type for this instance, can be one
     of `ASYNCHRONOUS` or `SYNCHRONOUS`.
+
+* `user_labels` - (Optional) A set of key/value user label pairs to assign to the instance.
 
 The optional `settings.database_flags` sublist supports:
 
@@ -222,6 +222,8 @@ exported:
 is to support accessing the [first address in the list in a terraform output](https://github.com/terraform-providers/terraform-provider-google/issues/912)
 when the resource is configured with a `count`.
 
+* `connection_name` - The connection name of the instance to be used in connection strings.
+
 * `ip_address.0.ip_address` - The IPv4 address assigned.
 
 * `ip_address.0.time_to_retire` - The time this IP address will be retired, in RFC
@@ -231,6 +233,17 @@ when the resource is configured with a `count`.
 
 * `settings.version` - Used to make sure changes to the `settings` block are
     atomic.
+    
+* `server_ca_cert.0.cert` - The CA Certificate used to connect to the SQL Instance via SSL.
+
+* `server_ca_cert.0.common_name` - The CN valid for the CA Cert.
+
+* `server_ca_cert.0.create_time` - Creation time of the CA Cert.
+
+* `server_ca_cert.0.expiration_time` - Expiration time of the CA Cert.
+
+* `server_ca_cert.0.sha1_fingerprint` - SHA Fingerprint of the CA Cert.
+
 
 ## Timeouts
 

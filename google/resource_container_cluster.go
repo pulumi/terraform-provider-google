@@ -24,7 +24,7 @@ var (
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
-				MaxItems: 10,
+				MaxItems: 20,
 				Elem:     cidrBlockConfig,
 			},
 		},
@@ -219,7 +219,7 @@ func resourceContainerCluster() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"logging.googleapis.com", "none"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"logging.googleapis.com", "logging.googleapis.com/kubernetes", "none"}, false),
 			},
 
 			"maintenance_policy": {
@@ -322,9 +322,10 @@ func resourceContainerCluster() *schema.Resource {
 			},
 
 			"monitoring_service": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"monitoring.googleapis.com", "monitoring.googleapis.com/kubernetes", "none"}, false),
 			},
 
 			"network": {
@@ -388,6 +389,7 @@ func resourceContainerCluster() *schema.Resource {
 						},
 					},
 				},
+				DiffSuppressFunc: podSecurityPolicyCfgSuppress,
 			},
 
 			"project": {
@@ -459,6 +461,12 @@ func resourceContainerCluster() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.CIDRNetwork(28, 28),
+			},
+
+			"resource_labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     schema.TypeString,
 			},
 		},
 	}
@@ -637,6 +645,14 @@ func resourceContainerClusterCreate(d *schema.ResourceData, meta interface{}) er
 		}
 	}
 
+	if v, ok := d.GetOk("resource_labels"); ok {
+		m := make(map[string]string)
+		for k, val := range v.(map[string]interface{}) {
+			m[k] = val.(string)
+		}
+		cluster.ResourceLabels = m
+	}
+
 	req := &containerBeta.CreateClusterRequest{
 		Cluster: cluster,
 	}
@@ -707,9 +723,9 @@ func resourceContainerClusterRead(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.Set("name", cluster.Name)
-
-	d.Set("network_policy", flattenNetworkPolicy(cluster.NetworkPolicy))
-
+	if err := d.Set("network_policy", flattenNetworkPolicy(cluster.NetworkPolicy)); err != nil {
+		return err
+	}
 	d.Set("zone", cluster.Zone)
 
 	locations := schema.NewSet(schema.HashString, convertStringArrToInterface(cluster.Locations))
@@ -717,31 +733,15 @@ func resourceContainerClusterRead(d *schema.ResourceData, meta interface{}) erro
 	d.Set("additional_zones", locations)
 
 	d.Set("endpoint", cluster.Endpoint)
-
-	if cluster.MaintenancePolicy != nil {
-		d.Set("maintenance_policy", flattenMaintenancePolicy(cluster.MaintenancePolicy))
+	if err := d.Set("maintenance_policy", flattenMaintenancePolicy(cluster.MaintenancePolicy)); err != nil {
+		return err
 	}
-
-	masterAuth := []map[string]interface{}{
-		{
-			"username":               cluster.MasterAuth.Username,
-			"password":               cluster.MasterAuth.Password,
-			"client_certificate":     cluster.MasterAuth.ClientCertificate,
-			"client_key":             cluster.MasterAuth.ClientKey,
-			"cluster_ca_certificate": cluster.MasterAuth.ClusterCaCertificate,
-		},
+	if err := d.Set("master_auth", flattenMasterAuth(cluster.MasterAuth)); err != nil {
+		return err
 	}
-	if len(cluster.MasterAuth.ClientCertificate) == 0 {
-		masterAuth[0]["client_certificate_config"] = []map[string]interface{}{
-			{"issue_client_certificate": false},
-		}
+	if err := d.Set("master_authorized_networks_config", flattenMasterAuthorizedNetworksConfig(cluster.MasterAuthorizedNetworksConfig)); err != nil {
+		return err
 	}
-	d.Set("master_auth", masterAuth)
-
-	if cluster.MasterAuthorizedNetworksConfig != nil {
-		d.Set("master_authorized_networks_config", flattenMasterAuthorizedNetworksConfig(cluster.MasterAuthorizedNetworksConfig))
-	}
-
 	d.Set("initial_node_count", cluster.InitialNodeCount)
 	d.Set("master_version", cluster.CurrentMasterVersion)
 	d.Set("node_version", cluster.CurrentNodeVersion)
@@ -757,35 +757,37 @@ func resourceContainerClusterRead(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 	d.Set("project", project)
-	if cluster.AddonsConfig != nil {
-		d.Set("addons_config", flattenClusterAddonsConfig(cluster.AddonsConfig))
+	if err := d.Set("addons_config", flattenClusterAddonsConfig(cluster.AddonsConfig)); err != nil {
+
 	}
+
 	nps, err := flattenClusterNodePools(d, config, cluster.NodePools)
 	if err != nil {
 		return err
 	}
-	d.Set("node_pool", nps)
-
-	if cluster.IpAllocationPolicy != nil {
-		if err := d.Set("ip_allocation_policy", flattenIPAllocationPolicy(cluster.IpAllocationPolicy)); err != nil {
-			return err
-		}
-	}
-
-	if igUrls, err := getInstanceGroupUrlsFromManagerUrls(config, cluster.InstanceGroupUrls); err != nil {
+	if err := d.Set("node_pool", nps); err != nil {
 		return err
-	} else {
-		d.Set("instance_group_urls", igUrls)
 	}
 
-	if cluster.PodSecurityPolicyConfig != nil {
-		if err := d.Set("pod_security_policy_config", flattenPodSecurityPolicyConfig(cluster.PodSecurityPolicyConfig)); err != nil {
-			return err
-		}
+	if err := d.Set("ip_allocation_policy", flattenIPAllocationPolicy(cluster.IpAllocationPolicy)); err != nil {
+		return err
+	}
+
+	igUrls, err := getInstanceGroupUrlsFromManagerUrls(config, cluster.InstanceGroupUrls)
+	if err != nil {
+		return err
+	}
+	if err := d.Set("instance_group_urls", igUrls); err != nil {
+		return err
+	}
+
+	if err := d.Set("pod_security_policy_config", flattenPodSecurityPolicyConfig(cluster.PodSecurityPolicyConfig)); err != nil {
+		return err
 	}
 
 	d.Set("private_cluster", cluster.PrivateCluster)
 	d.Set("master_ipv4_cidr_block", cluster.MasterIpv4CidrBlock)
+	d.Set("resource_labels", cluster.ResourceLabels)
 
 	return nil
 }
@@ -1142,6 +1144,30 @@ func resourceContainerClusterUpdate(d *schema.ResourceData, meta interface{}) er
 		d.SetPartial("pod_security_policy_config")
 	}
 
+	if d.HasChange("resource_labels") {
+		resourceLabels := d.Get("resource_labels").(map[string]interface{})
+		req := &containerBeta.SetLabelsRequest{
+			ResourceLabels: convertStringMap(resourceLabels),
+		}
+		updateF := func() error {
+			name := containerClusterFullName(project, location, clusterName)
+			op, err := config.clientContainerBeta.Projects.Locations.Clusters.SetResourceLabels(name, req).Do()
+			if err != nil {
+				return err
+			}
+
+			// Wait until it's updated
+			return containerSharedOperationWait(config, op, project, location, "updating GKE resource labels", timeoutInMinutes, 2)
+		}
+
+		// Call update serially.
+		if err := lockedCall(lockKey, updateF); err != nil {
+			return err
+		}
+
+		d.SetPartial("resource_labels")
+	}
+
 	if d.HasChange("remove_default_node_pool") && d.Get("remove_default_node_pool").(bool) {
 		name := fmt.Sprintf("%s/nodePools/%s", containerClusterFullName(project, location, clusterName), "default-pool")
 		op, err := config.clientContainerBeta.Projects.Locations.Clusters.NodePools.Delete(name).Do()
@@ -1384,6 +1410,9 @@ func flattenNetworkPolicy(c *containerBeta.NetworkPolicy) []map[string]interface
 
 func flattenClusterAddonsConfig(c *containerBeta.AddonsConfig) []map[string]interface{} {
 	result := make(map[string]interface{})
+	if c == nil {
+		return nil
+	}
 	if c.HorizontalPodAutoscaling != nil {
 		result["horizontal_pod_autoscaling"] = []map[string]interface{}{
 			{
@@ -1431,6 +1460,9 @@ func flattenClusterNodePools(d *schema.ResourceData, config *Config, c []*contai
 }
 
 func flattenIPAllocationPolicy(c *containerBeta.IPAllocationPolicy) []map[string]interface{} {
+	if c == nil {
+		return nil
+	}
 	return []map[string]interface{}{
 		{
 			"cluster_secondary_range_name":  c.ClusterSecondaryRangeName,
@@ -1440,6 +1472,9 @@ func flattenIPAllocationPolicy(c *containerBeta.IPAllocationPolicy) []map[string
 }
 
 func flattenMaintenancePolicy(mp *containerBeta.MaintenancePolicy) []map[string]interface{} {
+	if mp == nil {
+		return nil
+	}
 	return []map[string]interface{}{
 		{
 			"daily_maintenance_window": []map[string]interface{}{
@@ -1452,7 +1487,31 @@ func flattenMaintenancePolicy(mp *containerBeta.MaintenancePolicy) []map[string]
 	}
 }
 
+func flattenMasterAuth(ma *containerBeta.MasterAuth) []map[string]interface{} {
+	if ma == nil {
+		return nil
+	}
+	masterAuth := []map[string]interface{}{
+		{
+			"username":               ma.Username,
+			"password":               ma.Password,
+			"client_certificate":     ma.ClientCertificate,
+			"client_key":             ma.ClientKey,
+			"cluster_ca_certificate": ma.ClusterCaCertificate,
+		},
+	}
+	if len(ma.ClientCertificate) == 0 {
+		masterAuth[0]["client_certificate_config"] = []map[string]interface{}{
+			{"issue_client_certificate": false},
+		}
+	}
+	return masterAuth
+}
+
 func flattenMasterAuthorizedNetworksConfig(c *containerBeta.MasterAuthorizedNetworksConfig) []map[string]interface{} {
+	if c == nil {
+		return nil
+	}
 	if len(c.CidrBlocks) == 0 {
 		return nil
 	}
@@ -1471,6 +1530,9 @@ func flattenMasterAuthorizedNetworksConfig(c *containerBeta.MasterAuthorizedNetw
 }
 
 func flattenPodSecurityPolicyConfig(c *containerBeta.PodSecurityPolicyConfig) []map[string]interface{} {
+	if c == nil {
+		return nil
+	}
 	return []map[string]interface{}{
 		{
 			"enabled": c.Enabled,
@@ -1553,4 +1615,18 @@ func masterAuthClientCertCfgSuppress(k, old, new string, r *schema.ResourceData)
 	}
 
 	return strings.HasSuffix(k, ".issue_client_certificate") && old == "" && new == "true"
+}
+
+func podSecurityPolicyCfgSuppress(k, old, new string, r *schema.ResourceData) bool {
+	if k == "pod_security_policy_config.#" && old == "1" && new == "0" {
+		if v, ok := r.GetOk("pod_security_policy_config"); ok {
+			cfgList := v.([]interface{})
+			if len(cfgList) > 0 {
+				d := cfgList[0].(map[string]interface{})
+				// Suppress if old value was {enabled == false}
+				return !d["enabled"].(bool)
+			}
+		}
+	}
+	return false
 }

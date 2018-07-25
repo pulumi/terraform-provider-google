@@ -2,7 +2,6 @@ package google
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform/helper/encryption"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -88,9 +87,9 @@ func resourceGoogleServiceAccountKey() *schema.Resource {
 func resourceGoogleServiceAccountKeyCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	serviceAccount := d.Get("service_account_id").(string)
-	if !strings.HasPrefix(serviceAccount, "projects/") {
-		serviceAccount = "projects/-/serviceAccounts/" + serviceAccount
+	serviceAccountName, err := serviceAccountFQN(d.Get("service_account_id").(string), d, config)
+	if err != nil {
+		return err
 	}
 
 	r := &iam.CreateServiceAccountKeyRequest{
@@ -98,7 +97,7 @@ func resourceGoogleServiceAccountKeyCreate(d *schema.ResourceData, meta interfac
 		PrivateKeyType: d.Get("private_key_type").(string),
 	}
 
-	sak, err := config.clientIAM.Projects.ServiceAccounts.Keys.Create(serviceAccount, r).Do()
+	sak, err := config.clientIAM.Projects.ServiceAccounts.Keys.Create(serviceAccountName, r).Do()
 	if err != nil {
 		return fmt.Errorf("Error creating service account key: %s", err)
 	}
@@ -153,7 +152,7 @@ func resourceGoogleServiceAccountKeyDelete(d *schema.ResourceData, meta interfac
 
 	_, err := config.clientIAM.Projects.ServiceAccounts.Keys.Delete(d.Id()).Do()
 	if err != nil {
-		return err
+		return handleNotFoundError(err, d, fmt.Sprintf("Service Account Key %q", d.Id()))
 	}
 
 	d.SetId("")

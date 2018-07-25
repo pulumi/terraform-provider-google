@@ -17,10 +17,12 @@ package google
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	compute "google.golang.org/api/compute/v1"
 )
 
@@ -65,6 +67,11 @@ func resourceComputeTargetHttpsProxy() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"quic_override": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"NONE", "ENABLE", "DISABLE", ""}, false),
+			},
 			"ssl_policy": {
 				Type:             schema.TypeString,
 				Optional:         true,
@@ -100,33 +107,42 @@ func resourceComputeTargetHttpsProxyCreate(d *schema.ResourceData, meta interfac
 		return err
 	}
 
+	obj := make(map[string]interface{})
 	descriptionProp, err := expandComputeTargetHttpsProxyDescription(d.Get("description"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(descriptionProp)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+		obj["description"] = descriptionProp
 	}
 	nameProp, err := expandComputeTargetHttpsProxyName(d.Get("name"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
+		obj["name"] = nameProp
+	}
+	quicOverrideProp, err := expandComputeTargetHttpsProxyQuicOverride(d.Get("quic_override"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("quic_override"); !isEmptyValue(reflect.ValueOf(quicOverrideProp)) && (ok || !reflect.DeepEqual(v, quicOverrideProp)) {
+		obj["quicOverride"] = quicOverrideProp
 	}
 	sslCertificatesProp, err := expandComputeTargetHttpsProxySslCertificates(d.Get("ssl_certificates"), d, config)
 	if err != nil {
 		return err
-	}
-	urlMapProp, err := expandComputeTargetHttpsProxyUrlMap(d.Get("url_map"), d, config)
-	if err != nil {
-		return err
+	} else if v, ok := d.GetOkExists("ssl_certificates"); !isEmptyValue(reflect.ValueOf(sslCertificatesProp)) && (ok || !reflect.DeepEqual(v, sslCertificatesProp)) {
+		obj["sslCertificates"] = sslCertificatesProp
 	}
 	sslPolicyProp, err := expandComputeTargetHttpsProxySslPolicy(d.Get("ssl_policy"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("ssl_policy"); !isEmptyValue(reflect.ValueOf(sslPolicyProp)) && (ok || !reflect.DeepEqual(v, sslPolicyProp)) {
+		obj["sslPolicy"] = sslPolicyProp
 	}
-
-	obj := map[string]interface{}{
-		"description":     descriptionProp,
-		"name":            nameProp,
-		"sslCertificates": sslCertificatesProp,
-		"urlMap":          urlMapProp,
-		"sslPolicy":       sslPolicyProp,
+	urlMapProp, err := expandComputeTargetHttpsProxyUrlMap(d.Get("url_map"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("url_map"); !isEmptyValue(reflect.ValueOf(urlMapProp)) && (ok || !reflect.DeepEqual(v, urlMapProp)) {
+		obj["urlMap"] = urlMapProp
 	}
 
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetHttpsProxies")
@@ -198,16 +214,19 @@ func resourceComputeTargetHttpsProxyRead(d *schema.ResourceData, meta interface{
 	if err := d.Set("name", flattenComputeTargetHttpsProxyName(res["name"])); err != nil {
 		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
 	}
-	if err := d.Set("ssl_certificates", flattenComputeTargetHttpsProxySslCertificates(res["sslCertificates"])); err != nil {
+	if err := d.Set("quic_override", flattenComputeTargetHttpsProxyQuicOverride(res["quicOverride"])); err != nil {
 		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
 	}
-	if err := d.Set("url_map", flattenComputeTargetHttpsProxyUrlMap(res["urlMap"])); err != nil {
+	if err := d.Set("ssl_certificates", flattenComputeTargetHttpsProxySslCertificates(res["sslCertificates"])); err != nil {
 		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
 	}
 	if err := d.Set("ssl_policy", flattenComputeTargetHttpsProxySslPolicy(res["sslPolicy"])); err != nil {
 		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
 	}
-	if err := d.Set("self_link", res["selfLink"]); err != nil {
+	if err := d.Set("url_map", flattenComputeTargetHttpsProxyUrlMap(res["urlMap"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading TargetHttpsProxy: %s", err)
 	}
 	if err := d.Set("project", project); err != nil {
@@ -225,22 +244,54 @@ func resourceComputeTargetHttpsProxyUpdate(d *schema.ResourceData, meta interfac
 		return err
 	}
 
-	var obj map[string]interface{}
 	var url string
 	var res map[string]interface{}
 	op := &compute.Operation{}
 
 	d.Partial(true)
 
-	if d.HasChange("ssl_certificates") {
-		sslCertificatesProp, err := expandComputeTargetHttpsProxySslCertificates(d.Get("ssl_certificates"), d, config)
+	if d.HasChange("quic_override") {
+		obj := make(map[string]interface{})
+		quicOverrideProp, err := expandComputeTargetHttpsProxyQuicOverride(d.Get("quic_override"), d, config)
+		if err != nil {
+			return err
+		} else if v, ok := d.GetOkExists("quic_override"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, quicOverrideProp)) {
+			obj["quicOverride"] = quicOverrideProp
+		}
+
+		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetHttpsProxies/{{name}}/setQuicOverride")
+		if err != nil {
+			return err
+		}
+		res, err = sendRequest(config, "POST", url, obj)
+		if err != nil {
+			return fmt.Errorf("Error updating TargetHttpsProxy %q: %s", d.Id(), err)
+		}
+
+		err = Convert(res, op)
 		if err != nil {
 			return err
 		}
 
-		obj = map[string]interface{}{
-			"sslCertificates": sslCertificatesProp,
+		err = computeOperationWaitTime(
+			config.clientCompute, op, project, "Updating TargetHttpsProxy",
+			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
+
+		if err != nil {
+			return err
 		}
+
+		d.SetPartial("quic_override")
+	}
+	if d.HasChange("ssl_certificates") {
+		obj := make(map[string]interface{})
+		sslCertificatesProp, err := expandComputeTargetHttpsProxySslCertificates(d.Get("ssl_certificates"), d, config)
+		if err != nil {
+			return err
+		} else if v, ok := d.GetOkExists("ssl_certificates"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, sslCertificatesProp)) {
+			obj["sslCertificates"] = sslCertificatesProp
+		}
+
 		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/targetHttpsProxies/{{name}}/setSslCertificates")
 		if err != nil {
 			return err
@@ -265,48 +316,15 @@ func resourceComputeTargetHttpsProxyUpdate(d *schema.ResourceData, meta interfac
 
 		d.SetPartial("ssl_certificates")
 	}
-	if d.HasChange("url_map") {
-		urlMapProp, err := expandComputeTargetHttpsProxyUrlMap(d.Get("url_map"), d, config)
-		if err != nil {
-			return err
-		}
-
-		obj = map[string]interface{}{
-			"urlMap": urlMapProp,
-		}
-		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/targetHttpsProxies/{{name}}/setUrlMap")
-		if err != nil {
-			return err
-		}
-		res, err = sendRequest(config, "POST", url, obj)
-		if err != nil {
-			return fmt.Errorf("Error updating TargetHttpsProxy %q: %s", d.Id(), err)
-		}
-
-		err = Convert(res, op)
-		if err != nil {
-			return err
-		}
-
-		err = computeOperationWaitTime(
-			config.clientCompute, op, project, "Updating TargetHttpsProxy",
-			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
-
-		if err != nil {
-			return err
-		}
-
-		d.SetPartial("url_map")
-	}
 	if d.HasChange("ssl_policy") {
+		obj := make(map[string]interface{})
 		sslPolicyProp, err := expandComputeTargetHttpsProxySslPolicy(d.Get("ssl_policy"), d, config)
 		if err != nil {
 			return err
+		} else if v, ok := d.GetOkExists("ssl_policy"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, sslPolicyProp)) {
+			obj["sslPolicy"] = sslPolicyProp
 		}
 
-		obj = map[string]interface{}{
-			"sslPolicy": sslPolicyProp,
-		}
 		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetHttpsProxies/{{name}}/setSslPolicy")
 		if err != nil {
 			return err
@@ -331,6 +349,39 @@ func resourceComputeTargetHttpsProxyUpdate(d *schema.ResourceData, meta interfac
 
 		d.SetPartial("ssl_policy")
 	}
+	if d.HasChange("url_map") {
+		obj := make(map[string]interface{})
+		urlMapProp, err := expandComputeTargetHttpsProxyUrlMap(d.Get("url_map"), d, config)
+		if err != nil {
+			return err
+		} else if v, ok := d.GetOkExists("url_map"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, urlMapProp)) {
+			obj["urlMap"] = urlMapProp
+		}
+
+		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/targetHttpsProxies/{{name}}/setUrlMap")
+		if err != nil {
+			return err
+		}
+		res, err = sendRequest(config, "POST", url, obj)
+		if err != nil {
+			return fmt.Errorf("Error updating TargetHttpsProxy %q: %s", d.Id(), err)
+		}
+
+		err = Convert(res, op)
+		if err != nil {
+			return err
+		}
+
+		err = computeOperationWaitTime(
+			config.clientCompute, op, project, "Updating TargetHttpsProxy",
+			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
+
+		if err != nil {
+			return err
+		}
+
+		d.SetPartial("url_map")
+	}
 
 	d.Partial(false)
 
@@ -353,7 +404,7 @@ func resourceComputeTargetHttpsProxyDelete(d *schema.ResourceData, meta interfac
 	log.Printf("[DEBUG] Deleting TargetHttpsProxy %q", d.Id())
 	res, err := Delete(config, url)
 	if err != nil {
-		return fmt.Errorf("Error deleting TargetHttpsProxy %q: %s", d.Id(), err)
+		return handleNotFoundError(err, d, "TargetHttpsProxy")
 	}
 
 	op := &compute.Operation{}
@@ -410,15 +461,19 @@ func flattenComputeTargetHttpsProxyName(v interface{}) interface{} {
 	return v
 }
 
+func flattenComputeTargetHttpsProxyQuicOverride(v interface{}) interface{} {
+	return v
+}
+
 func flattenComputeTargetHttpsProxySslCertificates(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetHttpsProxyUrlMap(v interface{}) interface{} {
+func flattenComputeTargetHttpsProxySslPolicy(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetHttpsProxySslPolicy(v interface{}) interface{} {
+func flattenComputeTargetHttpsProxyUrlMap(v interface{}) interface{} {
 	return v
 }
 
@@ -427,6 +482,10 @@ func expandComputeTargetHttpsProxyDescription(v interface{}, d *schema.ResourceD
 }
 
 func expandComputeTargetHttpsProxyName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeTargetHttpsProxyQuicOverride(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
@@ -443,18 +502,18 @@ func expandComputeTargetHttpsProxySslCertificates(v interface{}, d *schema.Resou
 	return req, nil
 }
 
-func expandComputeTargetHttpsProxyUrlMap(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
-	f, err := parseGlobalFieldValue("urlMaps", v.(string), "project", d, config, true)
-	if err != nil {
-		return nil, fmt.Errorf("Invalid value for url_map: %s", err)
-	}
-	return f.RelativeLink(), nil
-}
-
 func expandComputeTargetHttpsProxySslPolicy(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	f, err := parseGlobalFieldValue("sslPolicies", v.(string), "project", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for ssl_policy: %s", err)
+	}
+	return f.RelativeLink(), nil
+}
+
+func expandComputeTargetHttpsProxyUrlMap(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
+	f, err := parseGlobalFieldValue("urlMaps", v.(string), "project", d, config, true)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid value for url_map: %s", err)
 	}
 	return f.RelativeLink(), nil
 }
