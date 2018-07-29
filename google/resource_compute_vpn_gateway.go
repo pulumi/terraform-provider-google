@@ -17,6 +17,7 @@ package google
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -88,28 +89,30 @@ func resourceComputeVpnGatewayCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
+	obj := make(map[string]interface{})
 	descriptionProp, err := expandComputeVpnGatewayDescription(d.Get("description"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(descriptionProp)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+		obj["description"] = descriptionProp
 	}
 	nameProp, err := expandComputeVpnGatewayName(d.Get("name"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
+		obj["name"] = nameProp
 	}
 	networkProp, err := expandComputeVpnGatewayNetwork(d.Get("network"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("network"); !isEmptyValue(reflect.ValueOf(networkProp)) && (ok || !reflect.DeepEqual(v, networkProp)) {
+		obj["network"] = networkProp
 	}
 	regionProp, err := expandComputeVpnGatewayRegion(d.Get("region"), d, config)
 	if err != nil {
 		return err
-	}
-
-	obj := map[string]interface{}{
-		"description": descriptionProp,
-		"name":        nameProp,
-		"network":     networkProp,
-		"region":      regionProp,
+	} else if v, ok := d.GetOkExists("region"); !isEmptyValue(reflect.ValueOf(regionProp)) && (ok || !reflect.DeepEqual(v, regionProp)) {
+		obj["region"] = regionProp
 	}
 
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/targetVpnGateways")
@@ -184,7 +187,7 @@ func resourceComputeVpnGatewayRead(d *schema.ResourceData, meta interface{}) err
 	if err := d.Set("region", flattenComputeVpnGatewayRegion(res["region"])); err != nil {
 		return fmt.Errorf("Error reading VpnGateway: %s", err)
 	}
-	if err := d.Set("self_link", res["selfLink"]); err != nil {
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading VpnGateway: %s", err)
 	}
 	if err := d.Set("project", project); err != nil {
@@ -210,7 +213,7 @@ func resourceComputeVpnGatewayDelete(d *schema.ResourceData, meta interface{}) e
 	log.Printf("[DEBUG] Deleting VpnGateway %q", d.Id())
 	res, err := Delete(config, url)
 	if err != nil {
-		return fmt.Errorf("Error deleting VpnGateway %q: %s", d.Id(), err)
+		return handleNotFoundError(err, d, "VpnGateway")
 	}
 
 	op := &compute.Operation{}
@@ -262,6 +265,9 @@ func flattenComputeVpnGatewayNetwork(v interface{}) interface{} {
 }
 
 func flattenComputeVpnGatewayRegion(v interface{}) interface{} {
+	if v == nil {
+		return v
+	}
 	return NameFromSelfLinkStateFunc(v)
 }
 

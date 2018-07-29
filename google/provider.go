@@ -87,10 +87,14 @@ func Provider() terraform.ResourceProvider {
 			"google_iam_policy":                      dataSourceGoogleIamPolicy(),
 			"google_kms_secret":                      dataSourceGoogleKmsSecret(),
 			"google_folder":                          dataSourceGoogleFolder(),
+			"google_netblock_ip_ranges":              dataSourceGoogleNetblockIpRanges(),
 			"google_organization":                    dataSourceGoogleOrganization(),
+			"google_service_account":                 dataSourceGoogleServiceAccount(),
+			"google_service_account_key":             dataSourceGoogleServiceAccountKey(),
 			"google_storage_object_signed_url":       dataSourceGoogleSignedUrl(),
 			"google_storage_project_service_account": dataSourceGoogleStorageProjectServiceAccount(),
 			"google_compute_backend_service":         dataSourceGoogleComputeBackendService(),
+			"google_compute_regions":                 dataSourceGoogleComputeRegions(),
 		},
 
 		ResourcesMap: mergeResourceMaps(
@@ -116,6 +120,7 @@ func Provider() terraform.ResourceProvider {
 				"google_compute_health_check":                  resourceComputeHealthCheck(),
 				"google_compute_image":                         resourceComputeImage(),
 				"google_compute_instance":                      resourceComputeInstance(),
+				"google_compute_instance_from_template":        resourceComputeInstanceFromTemplate(),
 				"google_compute_instance_group":                resourceComputeInstanceGroup(),
 				"google_compute_instance_group_manager":        resourceComputeInstanceGroupManager(),
 				"google_compute_instance_template":             resourceComputeInstanceTemplate(),

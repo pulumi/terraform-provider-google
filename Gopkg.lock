@@ -371,6 +371,12 @@
   version = "v1.1.1"
 
 [[projects]]
+  name = "github.com/stoewer/go-strcase"
+  packages = ["."]
+  revision = "c8136b55823dc6af966d084a06056c5575f6400f"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/ulikunitz/xz"
   packages = [
     ".",
@@ -510,6 +516,7 @@
     "dataproc/v1",
     "discovery/v1",
     "dns/v1",
+    "dns/v1beta2",
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
@@ -604,6 +611,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "113d14a407b41b86f6262f9187bbd9170b376965992d7eb38bf6add97c79be80"
+  inputs-digest = "77c63459a1bb870527f401d37c5dce7ddf1661f89818ba9b5a06d971f8fceefb"
   solver-name = "gps-cdcl"
   solver-version = 1

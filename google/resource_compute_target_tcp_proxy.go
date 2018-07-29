@@ -17,6 +17,7 @@ package google
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -94,28 +95,30 @@ func resourceComputeTargetTcpProxyCreate(d *schema.ResourceData, meta interface{
 		return err
 	}
 
+	obj := make(map[string]interface{})
 	descriptionProp, err := expandComputeTargetTcpProxyDescription(d.Get("description"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(descriptionProp)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+		obj["description"] = descriptionProp
 	}
 	nameProp, err := expandComputeTargetTcpProxyName(d.Get("name"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
+		obj["name"] = nameProp
 	}
 	proxyHeaderProp, err := expandComputeTargetTcpProxyProxyHeader(d.Get("proxy_header"), d, config)
 	if err != nil {
 		return err
+	} else if v, ok := d.GetOkExists("proxy_header"); !isEmptyValue(reflect.ValueOf(proxyHeaderProp)) && (ok || !reflect.DeepEqual(v, proxyHeaderProp)) {
+		obj["proxyHeader"] = proxyHeaderProp
 	}
 	serviceProp, err := expandComputeTargetTcpProxyBackendService(d.Get("backend_service"), d, config)
 	if err != nil {
 		return err
-	}
-
-	obj := map[string]interface{}{
-		"description": descriptionProp,
-		"name":        nameProp,
-		"proxyHeader": proxyHeaderProp,
-		"service":     serviceProp,
+	} else if v, ok := d.GetOkExists("backend_service"); !isEmptyValue(reflect.ValueOf(serviceProp)) && (ok || !reflect.DeepEqual(v, serviceProp)) {
+		obj["service"] = serviceProp
 	}
 
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetTcpProxies")
@@ -193,7 +196,7 @@ func resourceComputeTargetTcpProxyRead(d *schema.ResourceData, meta interface{})
 	if err := d.Set("backend_service", flattenComputeTargetTcpProxyBackendService(res["service"])); err != nil {
 		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
 	}
-	if err := d.Set("self_link", res["selfLink"]); err != nil {
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
 	}
 	if err := d.Set("project", project); err != nil {
@@ -211,7 +214,6 @@ func resourceComputeTargetTcpProxyUpdate(d *schema.ResourceData, meta interface{
 		return err
 	}
 
-	var obj map[string]interface{}
 	var url string
 	var res map[string]interface{}
 	op := &compute.Operation{}
@@ -219,14 +221,14 @@ func resourceComputeTargetTcpProxyUpdate(d *schema.ResourceData, meta interface{
 	d.Partial(true)
 
 	if d.HasChange("proxy_header") {
+		obj := make(map[string]interface{})
 		proxyHeaderProp, err := expandComputeTargetTcpProxyProxyHeader(d.Get("proxy_header"), d, config)
 		if err != nil {
 			return err
+		} else if v, ok := d.GetOkExists("proxy_header"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, proxyHeaderProp)) {
+			obj["proxyHeader"] = proxyHeaderProp
 		}
 
-		obj = map[string]interface{}{
-			"proxyHeader": proxyHeaderProp,
-		}
 		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetTcpProxies/{{name}}/setProxyHeader")
 		if err != nil {
 			return err
@@ -252,14 +254,14 @@ func resourceComputeTargetTcpProxyUpdate(d *schema.ResourceData, meta interface{
 		d.SetPartial("proxy_header")
 	}
 	if d.HasChange("backend_service") {
+		obj := make(map[string]interface{})
 		serviceProp, err := expandComputeTargetTcpProxyBackendService(d.Get("backend_service"), d, config)
 		if err != nil {
 			return err
+		} else if v, ok := d.GetOkExists("backend_service"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, serviceProp)) {
+			obj["service"] = serviceProp
 		}
 
-		obj = map[string]interface{}{
-			"service": serviceProp,
-		}
 		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/targetTcpProxies/{{name}}/setBackendService")
 		if err != nil {
 			return err
@@ -306,7 +308,7 @@ func resourceComputeTargetTcpProxyDelete(d *schema.ResourceData, meta interface{
 	log.Printf("[DEBUG] Deleting TargetTcpProxy %q", d.Id())
 	res, err := Delete(config, url)
 	if err != nil {
-		return fmt.Errorf("Error deleting TargetTcpProxy %q: %s", d.Id(), err)
+		return handleNotFoundError(err, d, "TargetTcpProxy")
 	}
 
 	op := &compute.Operation{}
