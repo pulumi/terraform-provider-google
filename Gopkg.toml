@@ -66,8 +66,8 @@
   name = "golang.org/x/oauth2"
 
 [[constraint]]
-  branch = "master"
   name = "google.golang.org/api"
+  revision = "087779f1d2c96357d4c45bd04c4d10d7b5f22736"
 
 [prune]
   go-tests = true
