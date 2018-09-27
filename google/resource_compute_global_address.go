@@ -29,6 +29,7 @@ func resourceComputeGlobalAddress() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceComputeGlobalAddressCreate,
 		Read:   resourceComputeGlobalAddressRead,
+		Update: resourceComputeGlobalAddressUpdate,
 		Delete: resourceComputeGlobalAddressDelete,
 
 		Importer: &schema.ResourceImporter{
@@ -37,6 +38,7 @@ func resourceComputeGlobalAddress() *schema.Resource {
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(240 * time.Second),
+			Update: schema.DefaultTimeout(240 * time.Second),
 			Delete: schema.DefaultTimeout(240 * time.Second),
 		},
 
@@ -51,6 +53,11 @@ func resourceComputeGlobalAddress() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"ip_version": {
 				Type:             schema.TypeString,
 				Optional:         true,
@@ -63,6 +70,10 @@ func resourceComputeGlobalAddress() *schema.Resource {
 				Computed: true,
 			},
 			"creation_timestamp": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"label_fingerprint": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -83,11 +94,6 @@ func resourceComputeGlobalAddress() *schema.Resource {
 func resourceComputeGlobalAddressCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	obj := make(map[string]interface{})
 	descriptionProp, err := expandComputeGlobalAddressDescription(d.Get("description"), d, config)
 	if err != nil {
@@ -101,6 +107,12 @@ func resourceComputeGlobalAddressCreate(d *schema.ResourceData, meta interface{}
 	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
 		obj["name"] = nameProp
 	}
+	labelsProp, err := expandComputeGlobalAddressLabels(d.Get("labels"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("labels"); !isEmptyValue(reflect.ValueOf(labelsProp)) && (ok || !reflect.DeepEqual(v, labelsProp)) {
+		obj["labels"] = labelsProp
+	}
 	ipVersionProp, err := expandComputeGlobalAddressIpVersion(d.Get("ip_version"), d, config)
 	if err != nil {
 		return err
@@ -108,13 +120,13 @@ func resourceComputeGlobalAddressCreate(d *schema.ResourceData, meta interface{}
 		obj["ipVersion"] = ipVersionProp
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/addresses")
+	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/global/addresses")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new GlobalAddress: %#v", obj)
-	res, err := Post(config, url, obj)
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating GlobalAddress: %s", err)
 	}
@@ -126,6 +138,10 @@ func resourceComputeGlobalAddressCreate(d *schema.ResourceData, meta interface{}
 	}
 	d.SetId(id)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -144,23 +160,56 @@ func resourceComputeGlobalAddressCreate(d *schema.ResourceData, meta interface{}
 
 	log.Printf("[DEBUG] Finished creating GlobalAddress %q: %#v", d.Id(), res)
 
+	if v, ok := d.GetOkExists("labels"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, labelsProp)) {
+		// Labels cannot be set in a create.  We'll have to set them here.
+		err = resourceComputeGlobalAddressRead(d, meta)
+		if err != nil {
+			return err
+		}
+
+		obj := make(map[string]interface{})
+		// d.Get("labels") will have been overridden by the Read call.
+		labelsProp, err := expandComputeGlobalAddressLabels(v, d, config)
+		obj["labels"] = labelsProp
+		labelFingerprintProp := d.Get("label_fingerprint")
+		obj["labelFingerprint"] = labelFingerprintProp
+
+		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/global/addresses/{{name}}/setLabels")
+		if err != nil {
+			return err
+		}
+		res, err = sendRequest(config, "POST", url, obj)
+		if err != nil {
+			return fmt.Errorf("Error adding labels to ComputeGlobalAddress %q: %s", d.Id(), err)
+		}
+
+		err = Convert(res, op)
+		if err != nil {
+			return err
+		}
+
+		err = computeOperationWaitTime(
+			config.clientCompute, op, project, "Updating ComputeGlobalAddress Labels",
+			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
+
+		if err != nil {
+			return err
+		}
+
+	}
+
 	return resourceComputeGlobalAddressRead(d, meta)
 }
 
 func resourceComputeGlobalAddressRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
+	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/global/addresses/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/addresses/{{name}}")
-	if err != nil {
-		return err
-	}
-
-	res, err := Get(config, url)
+	res, err := sendRequest(config, "GET", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeGlobalAddress %q", d.Id()))
 	}
@@ -177,11 +226,21 @@ func resourceComputeGlobalAddressRead(d *schema.ResourceData, meta interface{}) 
 	if err := d.Set("name", flattenComputeGlobalAddressName(res["name"])); err != nil {
 		return fmt.Errorf("Error reading GlobalAddress: %s", err)
 	}
+	if err := d.Set("labels", flattenComputeGlobalAddressLabels(res["labels"])); err != nil {
+		return fmt.Errorf("Error reading GlobalAddress: %s", err)
+	}
+	if err := d.Set("label_fingerprint", flattenComputeGlobalAddressLabelFingerprint(res["labelFingerprint"])); err != nil {
+		return fmt.Errorf("Error reading GlobalAddress: %s", err)
+	}
 	if err := d.Set("ip_version", flattenComputeGlobalAddressIpVersion(res["ipVersion"])); err != nil {
 		return fmt.Errorf("Error reading GlobalAddress: %s", err)
 	}
 	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading GlobalAddress: %s", err)
+	}
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
 	}
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading GlobalAddress: %s", err)
@@ -190,25 +249,77 @@ func resourceComputeGlobalAddressRead(d *schema.ResourceData, meta interface{}) 
 	return nil
 }
 
+func resourceComputeGlobalAddressUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
+
+	d.Partial(true)
+
+	if d.HasChange("labels") || d.HasChange("label_fingerprint") {
+		obj := make(map[string]interface{})
+		labelsProp, err := expandComputeGlobalAddressLabels(d.Get("labels"), d, config)
+		if err != nil {
+			return err
+		} else if v, ok := d.GetOkExists("labels"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, labelsProp)) {
+			obj["labels"] = labelsProp
+		}
+		labelFingerprintProp := d.Get("label_fingerprint")
+		obj["labelFingerprint"] = labelFingerprintProp
+
+		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/global/addresses/{{name}}/setLabels")
+		if err != nil {
+			return err
+		}
+		res, err := sendRequest(config, "POST", url, obj)
+		if err != nil {
+			return fmt.Errorf("Error updating GlobalAddress %q: %s", d.Id(), err)
+		}
+
+		project, err := getProject(d, config)
+		if err != nil {
+			return err
+		}
+		op := &compute.Operation{}
+		err = Convert(res, op)
+		if err != nil {
+			return err
+		}
+
+		err = computeOperationWaitTime(
+			config.clientCompute, op, project, "Updating GlobalAddress",
+			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
+
+		if err != nil {
+			return err
+		}
+
+		d.SetPartial("labels")
+		d.SetPartial("label_fingerprint")
+	}
+
+	d.Partial(false)
+
+	return resourceComputeGlobalAddressRead(d, meta)
+}
+
 func resourceComputeGlobalAddressDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
+
+	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/global/addresses/{{name}}")
+	if err != nil {
+		return err
+	}
+
+	var obj map[string]interface{}
+	log.Printf("[DEBUG] Deleting GlobalAddress %q", d.Id())
+	res, err := sendRequest(config, "DELETE", url, obj)
+	if err != nil {
+		return handleNotFoundError(err, d, "GlobalAddress")
+	}
 
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
-
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/addresses/{{name}}")
-	if err != nil {
-		return err
-	}
-
-	log.Printf("[DEBUG] Deleting GlobalAddress %q", d.Id())
-	res, err := Delete(config, url)
-	if err != nil {
-		return handleNotFoundError(err, d, "GlobalAddress")
-	}
-
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -257,6 +368,14 @@ func flattenComputeGlobalAddressName(v interface{}) interface{} {
 	return v
 }
 
+func flattenComputeGlobalAddressLabels(v interface{}) interface{} {
+	return v
+}
+
+func flattenComputeGlobalAddressLabelFingerprint(v interface{}) interface{} {
+	return v
+}
+
 func flattenComputeGlobalAddressIpVersion(v interface{}) interface{} {
 	return v
 }
@@ -267,6 +386,17 @@ func expandComputeGlobalAddressDescription(v interface{}, d *schema.ResourceData
 
 func expandComputeGlobalAddressName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
+}
+
+func expandComputeGlobalAddressLabels(v interface{}, d *schema.ResourceData, config *Config) (map[string]string, error) {
+	if v == nil {
+		return map[string]string{}, nil
+	}
+	m := make(map[string]string)
+	for k, val := range v.(map[string]interface{}) {
+		m[k] = val.(string)
+	}
+	return m, nil
 }
 
 func expandComputeGlobalAddressIpVersion(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {

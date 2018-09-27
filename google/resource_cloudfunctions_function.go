@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 	"log"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,9 +27,9 @@ var functionAllowedMemory = map[int]bool{
 	2048: true,
 }
 
-// For now CloudFunctions are allowed only in us-central1
+// For now CloudFunctions are allowed only in the following locations.
 // Please see https://cloud.google.com/about/locations/
-var validCloudFunctionRegion = validation.StringInSlice([]string{"us-central1"}, true)
+var validCloudFunctionRegion = validation.StringInSlice([]string{"us-central1", "us-east1", "europe-west1", "asia-northeast1"}, true)
 
 const functionDefaultAllowedMemoryMb = 256
 
@@ -164,6 +165,11 @@ func resourceCloudFunctionsFunction() *schema.Resource {
 			},
 
 			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+
+			"environment_variables": {
 				Type:     schema.TypeMap,
 				Optional: true,
 			},
@@ -318,6 +324,10 @@ func resourceCloudFunctionsCreate(d *schema.ResourceData, meta interface{}) erro
 		function.Labels = expandLabels(d)
 	}
 
+	if _, ok := d.GetOk("environment_variables"); ok {
+		function.EnvironmentVariables = expandEnvironmentVariables(d)
+	}
+
 	log.Printf("[DEBUG] Creating cloud function: %s", function.Name)
 	op, err := config.clientCloudFunctions.Projects.Locations.Functions.Create(
 		cloudFuncId.locationId(), function).Do()
@@ -360,10 +370,18 @@ func resourceCloudFunctionsRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.Set("timeout", timeout)
 	d.Set("labels", function.Labels)
+	d.Set("environment_variables", function.EnvironmentVariables)
 	if function.SourceArchiveUrl != "" {
-		sourceArr := strings.Split(function.SourceArchiveUrl, "/")
-		d.Set("source_archive_bucket", sourceArr[2])
-		d.Set("source_archive_object", sourceArr[3])
+		// sourceArchiveUrl should always be a Google Cloud Storage URL (e.g. gs://bucket/object)
+		// https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
+		sourceURL, err := url.Parse(function.SourceArchiveUrl)
+		if err != nil {
+			return err
+		}
+		bucket := sourceURL.Host
+		object := strings.TrimLeft(sourceURL.Path, "/")
+		d.Set("source_archive_bucket", bucket)
+		d.Set("source_archive_object", object)
 	}
 
 	if function.HttpsTrigger != nil {
@@ -430,6 +448,11 @@ func resourceCloudFunctionsUpdate(d *schema.ResourceData, meta interface{}) erro
 	if d.HasChange("labels") {
 		function.Labels = expandLabels(d)
 		updateMaskArr = append(updateMaskArr, "labels")
+	}
+
+	if d.HasChange("environment_variables") {
+		function.EnvironmentVariables = expandEnvironmentVariables(d)
+		updateMaskArr = append(updateMaskArr, "environment_variables")
 	}
 
 	if d.HasChange("retry_on_failure") {

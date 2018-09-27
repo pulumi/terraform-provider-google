@@ -45,7 +45,7 @@ To get more information about Address, see:
 ## Example Usage
 
 ```hcl
-resource "google_compute_address" "default" {
+resource "google_compute_address" "ip_address" {
   name = "my-address"
 }
 ```
@@ -84,6 +84,7 @@ The following arguments are supported:
   following characters must be a dash, lowercase letter, or digit,
   except the last character, which cannot be a dash.
 
+
 - - -
 
 
@@ -116,11 +117,15 @@ The following arguments are supported:
   This field can only be used with INTERNAL type with
   GCE_ENDPOINT/DNS_RESOLVER purposes.
 
+* `labels` -
+  (Optional)
+  Labels to apply to this address.  A list of key->value pairs.
+
 * `region` -
   (Optional)
   The Region in which the created address should reside.
   If it is not provided, the provider region is used.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
 
@@ -134,10 +139,14 @@ In addition to the arguments listed above, the following computed attributes are
 
 * `users` -
   The URLs of the resources that are using this address.
+
+* `label_fingerprint` -
+  The fingerprint used for optimistic locking of this resource.  Used
+  internally during updates.
 * `self_link` - The URI of the created resource.
 
 
-* `address`: The IP of the created resource.
+* `address` - The IP of the created resource.
 
 ## Timeouts
 
@@ -145,6 +154,7 @@ This resource provides the following
 [Timeouts](/docs/configuration/resources.html#timeouts) configuration options:
 
 - `create` - Default is 4 minutes.
+- `update` - Default is 4 minutes.
 - `delete` - Default is 4 minutes.
 
 ## Import

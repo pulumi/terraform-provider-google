@@ -157,11 +157,6 @@ func resourceComputeAutoscaler() *schema.Resource {
 func resourceComputeAutoscalerCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	obj := make(map[string]interface{})
 	nameProp, err := expandComputeAutoscalerName(d.Get("name"), d, config)
 	if err != nil {
@@ -200,7 +195,7 @@ func resourceComputeAutoscalerCreate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	log.Printf("[DEBUG] Creating new Autoscaler: %#v", obj)
-	res, err := Post(config, url, obj)
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating Autoscaler: %s", err)
 	}
@@ -212,6 +207,10 @@ func resourceComputeAutoscalerCreate(d *schema.ResourceData, meta interface{}) e
 	}
 	d.SetId(id)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -236,17 +235,12 @@ func resourceComputeAutoscalerCreate(d *schema.ResourceData, meta interface{}) e
 func resourceComputeAutoscalerRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/autoscalers/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := Get(config, url)
+	res, err := sendRequest(config, "GET", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeAutoscaler %q", d.Id()))
 	}
@@ -272,6 +266,10 @@ func resourceComputeAutoscalerRead(d *schema.ResourceData, meta interface{}) err
 	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading Autoscaler: %s", err)
 	}
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Autoscaler: %s", err)
 	}
@@ -281,11 +279,6 @@ func resourceComputeAutoscalerRead(d *schema.ResourceData, meta interface{}) err
 
 func resourceComputeAutoscalerUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 
 	obj := make(map[string]interface{})
 	nameProp, err := expandComputeAutoscalerName(d.Get("name"), d, config)
@@ -331,6 +324,10 @@ func resourceComputeAutoscalerUpdate(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("Error updating Autoscaler %q: %s", d.Id(), err)
 	}
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -351,22 +348,22 @@ func resourceComputeAutoscalerUpdate(d *schema.ResourceData, meta interface{}) e
 func resourceComputeAutoscalerDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/autoscalers/{{name}}")
 	if err != nil {
 		return err
 	}
 
+	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting Autoscaler %q", d.Id())
-	res, err := Delete(config, url)
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "Autoscaler")
 	}
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -518,11 +515,17 @@ func flattenComputeAutoscalerAutoscalingPolicyLoadBalancingUtilizationTarget(v i
 }
 
 func flattenComputeAutoscalerTarget(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeAutoscalerZone(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func expandComputeAutoscalerName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
@@ -669,6 +672,9 @@ func expandComputeAutoscalerAutoscalingPolicyLoadBalancingUtilizationTarget(v in
 }
 
 func expandComputeAutoscalerTarget(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
+	if v == nil || v.(string) == "" {
+		return "", nil
+	}
 	f, err := parseZonalFieldValue("instanceGroupManagers", v.(string), "project", "zone", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for target: %s", err)

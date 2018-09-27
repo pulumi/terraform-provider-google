@@ -42,6 +42,8 @@ var (
 	}
 	ServiceAccountLinkRegex = ServiceAccountLinkRegexPrefix + "(" + strings.Join(PossibleServiceAccountNames, "|") + ")"
 
+	ServiceAccountKeyNameRegex = ServiceAccountLinkRegexPrefix + "(.+)/keys/(.+)"
+
 	// Format of service accounts created through the API
 	CreatedServiceAccountNameRegex = fmt.Sprintf(RFC1035NameTemplate, 4, 28) + "@" + ProjectNameInDNSFormRegex + "\\.iam\\.gserviceaccount\\.com$"
 	ProjectNameInDNSFormRegex      = "[-a-z0-9\\.]{1,63}"
@@ -49,7 +51,6 @@ var (
 	// Format of default App Engine service accounts created by Google
 	AppEngineServiceAccountNameRegex = ProjectRegex + "@appspot.gserviceaccount.com"
 
-	ProjectIDRegex   = "^[a-z][a-z0-9-]{4,28}[a-z0-9]$"
 	ProjectNameRegex = "^[A-Za-z0-9-'\"\\s!]{4,30}$"
 )
 
@@ -166,7 +167,7 @@ func validateProjectID() schema.SchemaValidateFunc {
 	return func(v interface{}, k string) (ws []string, errors []error) {
 		value := v.(string)
 
-		if !regexp.MustCompile(ProjectIDRegex).MatchString(value) {
+		if !regexp.MustCompile("^" + ProjectRegex + "$").MatchString(value) {
 			errors = append(errors, fmt.Errorf(
 				"%q project_id must be 6 to 30 with lowercase letters, digits, hyphens and start with a letter. Trailing hyphens are prohibited.", value))
 		}

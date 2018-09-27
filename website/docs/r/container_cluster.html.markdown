@@ -92,6 +92,9 @@ output "cluster_ca_certificate" {
 
 * `description` - (Optional) Description of the cluster.
 
+* `enable_binary_authorization` - (Optional) Enable Binary Authorization for this cluster.
+    If enabled, all container images will be validated by Google Binary Authorization.
+
 * `enable_kubernetes_alpha` - (Optional) Whether to enable Kubernetes Alpha features for
     this cluster. Note that when this option is enabled, the cluster cannot be upgraded
     and will be automatically deleted after 30 days.
@@ -235,6 +238,23 @@ The `ip_allocation_policy` block supports:
     ClusterIPs. This must be an existing secondary range associated with the cluster
     subnetwork.
 
+* `cluster_ipv4_cidr_block` - (Optional) The IP address range for the cluster pod IPs.
+    Set to blank to have a range chosen with the default size. Set to /netmask (e.g. /14)
+    to have a range chosen with a specific netmask. Set to a CIDR notation (e.g. 10.96.0.0/14)
+    from the RFC-1918 private networks (e.g. 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) to
+    pick a specific range to use.
+
+* `services_ipv4_cidr_block` - (Optional) The IP address range of the services IPs in this cluster.
+    Set to blank to have a range chosen with the default size. Set to /netmask (e.g. /14)
+    to have a range chosen with a specific netmask. Set to a CIDR notation (e.g. 10.96.0.0/14)
+    from the RFC-1918 private networks (e.g. 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) to
+    pick a specific range to use.
+
+* `create_subnetwork`- (Optional) Whether a new subnetwork will be created automatically for the cluster.
+
+* `subnetwork_name` - (Optional) A custom subnetwork name to be used if create_subnetwork is true.
+    If this field is empty, then an automatic name will be chosen for the new subnetwork.
+
 The `master_auth` block supports:
 
 * `password` - (Required) The password to use for HTTP basic authentication when accessing
@@ -285,7 +305,8 @@ The `node_config` block supports:
 * `guest_accelerator` - (Optional) List of the type and count of accelerator cards attached to the instance.
     Structure documented below.
 
-* `image_type` - (Optional) The image type to use for this node.
+* `image_type` - (Optional) The image type to use for this node. Note that changing the image type
+    will delete and recreate all nodes in the node pool.
 
 * `labels` - (Optional) The Kubernetes labels (key/value pairs) to be applied to each node.
 

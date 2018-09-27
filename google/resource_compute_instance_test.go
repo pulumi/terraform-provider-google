@@ -1539,6 +1539,11 @@ func testAccCheckComputeInstanceHasConfiguredDeletionProtection(instance *comput
 
 func testAccComputeInstance_basic(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1549,7 +1554,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1571,13 +1576,18 @@ resource "google_compute_instance" "foobar" {
 	labels {
 		my_key       = "my_value"
 		my_other_key = "my_other_value"
-    }
+	}
 }
 `, instance)
 }
 
 func testAccComputeInstance_basic2(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1587,7 +1597,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1604,6 +1614,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_basic3(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1613,7 +1628,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-cloud/debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1630,6 +1645,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_basic4(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1639,7 +1659,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-cloud/debian-8"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1657,6 +1677,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_basic5(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1666,7 +1691,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1683,6 +1708,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_basic_deletionProtectionFalse(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name                 = "%s"
 	machine_type         = "n1-standard-1"
@@ -1693,7 +1723,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1706,6 +1736,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_basic_deletionProtectionTrue(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name                 = "%s"
 	machine_type         = "n1-standard-1"
@@ -1716,7 +1751,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1731,6 +1766,11 @@ resource "google_compute_instance" "foobar" {
 // Generates diff mismatch
 func testAccComputeInstance_forceNewAndChangeMetadata(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -1739,7 +1779,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1758,6 +1798,11 @@ resource "google_compute_instance" "foobar" {
 // Update metadata, tags, and network_interface
 func testAccComputeInstance_update(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -1767,7 +1812,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1792,6 +1837,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_ip(ip, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_address" "foo" {
 	name = "%s"
 }
@@ -1804,7 +1854,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1824,6 +1874,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_PTRRecord(record, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -1832,7 +1887,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1852,6 +1907,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_generateIp(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -1860,7 +1920,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1880,6 +1940,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_networkTier(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -1887,7 +1952,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -1907,6 +1972,11 @@ func testAccComputeInstance_disks_encryption(bootEncryptionKey string, diskNameT
 		diskNames = append(diskNames, k)
 	}
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -1948,7 +2018,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 		disk_encryption_key_raw = "%s"
 	}
@@ -1990,6 +2060,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_attachedDisk(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2004,7 +2079,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2021,6 +2096,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_attachedDisk_sourceUrl(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2035,7 +2115,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2052,6 +2132,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_attachedDisk_modeRo(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2066,7 +2151,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2084,6 +2169,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_addAttachedDisk(disk, disk2, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2105,7 +2195,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2126,6 +2216,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_detachDisk(disk, disk2, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2147,7 +2242,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2164,6 +2259,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_updateAttachedDiskEncryptionKey(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name = "%s"
 	size = 10
@@ -2179,7 +2279,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2197,10 +2297,15 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_bootDisk_source(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name  = "%s"
 	zone  = "us-central1-a"
-	image = "debian-8-jessie-v20160803"
+	image = "${data.google_compute_image.my_image.self_link}"
 }
 
 resource "google_compute_instance" "foobar" {
@@ -2221,10 +2326,15 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_bootDisk_sourceUrl(disk, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name  = "%s"
 	zone  = "us-central1-a"
-	image = "debian-8-jessie-v20160803"
+	image = "${data.google_compute_image.my_image.self_link}"
 }
 
 resource "google_compute_instance" "foobar" {
@@ -2245,6 +2355,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_bootDisk_type(instance string, diskType string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -2252,7 +2367,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params {
-			image	= "debian-8-jessie-v20160803"
+			image	= "${data.google_compute_image.my_image.self_link}"
 			type	= "%s"
 		}
 	}
@@ -2266,6 +2381,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_scratchDisk(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "scratch" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -2273,7 +2393,7 @@ resource "google_compute_instance" "scratch" {
 
 	boot_disk {
 		initialize_params {
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2295,6 +2415,11 @@ resource "google_compute_instance" "scratch" {
 
 func testAccComputeInstance_service_account(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -2302,7 +2427,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2323,6 +2448,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_scheduling(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -2330,7 +2460,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2347,6 +2477,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_subnet_auto(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "inst-test-network-%s"
 
@@ -2360,7 +2495,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2375,6 +2510,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_subnet_custom(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "inst-test-network-%s"
 
@@ -2395,7 +2535,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2410,6 +2550,10 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_subnet_xpn(org, billingId, projectName, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
 
 resource "google_project" "host_project" {
 	name = "Test Project XPN Host"
@@ -2468,7 +2612,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2484,6 +2628,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_address_auto(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "inst-test-network-%s"
 }
@@ -2500,7 +2649,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2515,6 +2664,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_address_custom(instance, address string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "inst-test-network-%s"
 }
@@ -2531,7 +2685,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2547,10 +2701,15 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_private_image_family(disk, family, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_disk" "foobar" {
 	name  = "%s"
 	zone  = "us-central1-a"
-	image = "debian-8-jessie-v20160803"
+	image = "${data.google_compute_image.my_image.self_link}"
 }
 
 resource "google_compute_image" "foobar" {
@@ -2583,6 +2742,11 @@ resource "google_compute_instance" "foobar" {
 
 func testAccComputeInstance_multiNic(instance, network, subnetwork string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name         = "%s"
 	machine_type = "n1-standard-1"
@@ -2590,7 +2754,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2618,79 +2782,99 @@ resource "google_compute_subnetwork" "inst-test-subnetwork" {
 
 func testAccComputeInstance_guestAccelerator(instance string, count uint8) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
-  name = "%s"
-  machine_type = "n1-standard-1"
-  zone = "us-east1-d"
+	name = "%s"
+	machine_type = "n1-standard-1"
+	zone = "us-east1-d"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-8-jessie-v20160803"
-    }
-  }
+	boot_disk {
+		initialize_params {
+			image = "${data.google_compute_image.my_image.self_link}"
+		}
+	}
 
-  network_interface {
-    network = "default"
-  }
+	network_interface {
+		network = "default"
+	}
 
-  scheduling {
-    # Instances with guest accelerators do not support live migration.
-    on_host_maintenance = "TERMINATE"
-  }
+	scheduling {
+		# Instances with guest accelerators do not support live migration.
+		on_host_maintenance = "TERMINATE"
+	}
 
-  guest_accelerator {
-    count = %d
-    type = "nvidia-tesla-k80"
-  }
+	guest_accelerator {
+		count = %d
+		type = "nvidia-tesla-k80"
+	}
 }`, instance, count)
 }
 
 func testAccComputeInstance_minCpuPlatform(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
-  name = "%s"
-  machine_type = "n1-standard-1"
-  zone = "us-east1-d"
+	name = "%s"
+	machine_type = "n1-standard-1"
+	zone = "us-east1-d"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-8-jessie-v20160803"
-    }
-  }
+	boot_disk {
+		initialize_params {
+			image = "${data.google_compute_image.my_image.self_link}"
+		}
+	}
 
-  network_interface {
-    network = "default"
-  }
+	network_interface {
+		network = "default"
+	}
 
-  min_cpu_platform = "Intel Haswell"
+	min_cpu_platform = "Intel Haswell"
 }`, instance)
 }
 
 func testAccComputeInstance_primaryAliasIpRange(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
-  name = "%s"
-  machine_type = "n1-standard-1"
-  zone = "us-east1-d"
+	name = "%s"
+	machine_type = "n1-standard-1"
+	zone = "us-east1-d"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-8-jessie-v20160803"
-    }
-  }
+	boot_disk {
+		initialize_params {
+			image = "${data.google_compute_image.my_image.self_link}"
+		}
+	}
 
-  network_interface {
-    network = "default"
+	network_interface {
+		network = "default"
 
-    alias_ip_range {
-      ip_cidr_range = "/24"
-    }
-  }
+		alias_ip_range {
+			ip_cidr_range = "/24"
+		}
+	}
 }`, instance)
 }
 
 func testAccComputeInstance_secondaryAliasIpRange(network, subnet, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "%s"
 }
@@ -2703,31 +2887,47 @@ resource "google_compute_subnetwork" "inst-test-subnetwork" {
 		range_name = "inst-test-secondary"
 		ip_cidr_range = "172.16.0.0/20"
 	}
+	secondary_ip_range {
+		range_name = "inst-test-tertiary"
+		ip_cidr_range = "10.1.0.0/16"
+	}
 }
 resource "google_compute_instance" "foobar" {
-  name         = "%s"
-  machine_type = "n1-standard-1"
-  zone         = "us-east1-d"
+	name         = "%s"
+	machine_type = "n1-standard-1"
+	zone         = "us-east1-d"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-8-jessie-v20160803"
-    }
-  }
+	boot_disk {
+		initialize_params {
+			image = "${data.google_compute_image.my_image.self_link}"
+		}
+	}
 
-  network_interface {
-    subnetwork = "${google_compute_subnetwork.inst-test-subnetwork.self_link}"
+	network_interface {
+		subnetwork = "${google_compute_subnetwork.inst-test-subnetwork.self_link}"
 
-    alias_ip_range {
-      subnetwork_range_name = "${google_compute_subnetwork.inst-test-subnetwork.secondary_ip_range.0.range_name}"
-      ip_cidr_range         = "172.16.0.0/24"
-    }
-  }
+		alias_ip_range = [
+		{
+			subnetwork_range_name = "${google_compute_subnetwork.inst-test-subnetwork.secondary_ip_range.0.range_name}"
+			ip_cidr_range         = "172.16.0.0/24"
+		},
+		{
+			subnetwork_range_name = "${google_compute_subnetwork.inst-test-subnetwork.secondary_ip_range.1.range_name}"
+			ip_cidr_range         = "10.1.0.0/20"
+		}
+	]
+
+	}
 }`, network, subnet, instance)
 }
 
 func testAccComputeInstance_secondaryAliasIpRangeUpdate(network, subnet, instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_network" "inst-test-network" {
 	name = "%s"
 }
@@ -2740,31 +2940,39 @@ resource "google_compute_subnetwork" "inst-test-subnetwork" {
 		range_name    = "inst-test-secondary"
 		ip_cidr_range = "172.16.0.0/20"
 	}
+	secondary_ip_range {
+		range_name = "inst-test-tertiary"
+		ip_cidr_range = "10.1.0.0/16"
+	}
 }
 resource "google_compute_instance" "foobar" {
-  name         = "%s"
-  machine_type = "n1-standard-1"
-  zone         = "us-east1-d"
+	name         = "%s"
+	machine_type = "n1-standard-1"
+	zone         = "us-east1-d"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-8-jessie-v20160803"
-    }
-  }
+	boot_disk {
+		initialize_params {
+			image = "${data.google_compute_image.my_image.self_link}"
+		}
+	}
 
-  network_interface {
-    subnetwork = "${google_compute_subnetwork.inst-test-subnetwork.self_link}"
-
-    alias_ip_range {
-      ip_cidr_range = "10.0.1.0/24"
-    }
-  }
+	network_interface {
+		subnetwork = "${google_compute_subnetwork.inst-test-subnetwork.self_link}"
+		alias_ip_range {
+			ip_cidr_range = "10.0.1.0/24"
+		}
+	}
 }`, network, subnet, instance)
 }
 
 // Set fields that require stopping the instance: machine_type, min_cpu_platform, and service_account
 func testAccComputeInstance_stopInstanceToUpdate(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-1"
@@ -2772,7 +2980,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2797,6 +3005,11 @@ resource "google_compute_instance" "foobar" {
 // Update fields that require stopping the instance: machine_type, min_cpu_platform, and service_account
 func testAccComputeInstance_stopInstanceToUpdate2(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-2"
@@ -2804,7 +3017,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 
@@ -2828,6 +3041,11 @@ resource "google_compute_instance" "foobar" {
 // Remove fields that require stopping the instance: min_cpu_platform and service_account (machine_type is Required)
 func testAccComputeInstance_stopInstanceToUpdate3(instance string) string {
 	return fmt.Sprintf(`
+data "google_compute_image" "my_image" {
+	family  = "debian-9"
+	project = "debian-cloud"
+}
+
 resource "google_compute_instance" "foobar" {
 	name           = "%s"
 	machine_type   = "n1-standard-2"
@@ -2835,7 +3053,7 @@ resource "google_compute_instance" "foobar" {
 
 	boot_disk {
 		initialize_params{
-			image = "debian-8-jessie-v20160803"
+			image = "${data.google_compute_image.my_image.self_link}"
 		}
 	}
 

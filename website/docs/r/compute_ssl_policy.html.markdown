@@ -67,6 +67,7 @@ The following arguments are supported:
   characters must be a dash, lowercase letter, or digit, except the last
   character, which cannot be a dash.
 
+
 - - -
 
 
@@ -104,7 +105,7 @@ The following arguments are supported:
   for which ciphers are available to use. **Note**: this argument
   *must* be present when using the `CUSTOM` profile. This argument
   *must not* be present when using any other profile.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
 

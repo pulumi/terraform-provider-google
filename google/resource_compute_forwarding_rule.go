@@ -176,11 +176,6 @@ func resourceComputeForwardingRule() *schema.Resource {
 func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	obj := make(map[string]interface{})
 	descriptionProp, err := expandComputeForwardingRuleDescription(d.Get("description"), d, config)
 	if err != nil {
@@ -285,7 +280,7 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("[DEBUG] Creating new ForwardingRule: %#v", obj)
-	res, err := Post(config, url, obj)
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating ForwardingRule: %s", err)
 	}
@@ -297,6 +292,10 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 	}
 	d.SetId(id)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -323,6 +322,7 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 		}
 
 		obj := make(map[string]interface{})
+		// d.Get("labels") will have been overridden by the Read call.
 		labelsProp, err := expandComputeForwardingRuleLabels(v, d, config)
 		obj["labels"] = labelsProp
 		labelFingerprintProp := d.Get("label_fingerprint")
@@ -334,7 +334,7 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 		}
 		res, err = sendRequest(config, "POST", url, obj)
 		if err != nil {
-			return fmt.Errorf("Error adding labels to ForwardingRule %q: %s", d.Id(), err)
+			return fmt.Errorf("Error adding labels to ComputeForwardingRule %q: %s", d.Id(), err)
 		}
 
 		err = Convert(res, op)
@@ -343,7 +343,7 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 		}
 
 		err = computeOperationWaitTime(
-			config.clientCompute, op, project, "Updating ForwardingRule",
+			config.clientCompute, op, project, "Updating ComputeForwardingRule Labels",
 			int(d.Timeout(schema.TimeoutUpdate).Minutes()))
 
 		if err != nil {
@@ -358,17 +358,12 @@ func resourceComputeForwardingRuleCreate(d *schema.ResourceData, meta interface{
 func resourceComputeForwardingRuleRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := Get(config, url)
+	res, err := sendRequest(config, "GET", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeForwardingRule %q", d.Id()))
 	}
@@ -433,6 +428,10 @@ func resourceComputeForwardingRuleRead(d *schema.ResourceData, meta interface{})
 	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading ForwardingRule: %s", err)
 	}
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading ForwardingRule: %s", err)
 	}
@@ -442,15 +441,6 @@ func resourceComputeForwardingRuleRead(d *schema.ResourceData, meta interface{})
 
 func resourceComputeForwardingRuleUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
-	var url string
-	var res map[string]interface{}
-	op := &compute.Operation{}
 
 	d.Partial(true)
 
@@ -463,15 +453,20 @@ func resourceComputeForwardingRuleUpdate(d *schema.ResourceData, meta interface{
 			obj["target"] = targetProp
 		}
 
-		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}/setTarget")
+		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}/setTarget")
 		if err != nil {
 			return err
 		}
-		res, err = sendRequest(config, "POST", url, obj)
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating ForwardingRule %q: %s", d.Id(), err)
 		}
 
+		project, err := getProject(d, config)
+		if err != nil {
+			return err
+		}
+		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
 			return err
@@ -498,15 +493,20 @@ func resourceComputeForwardingRuleUpdate(d *schema.ResourceData, meta interface{
 		labelFingerprintProp := d.Get("label_fingerprint")
 		obj["labelFingerprint"] = labelFingerprintProp
 
-		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}/setLabels")
+		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}/setLabels")
 		if err != nil {
 			return err
 		}
-		res, err = sendRequest(config, "POST", url, obj)
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating ForwardingRule %q: %s", d.Id(), err)
 		}
 
+		project, err := getProject(d, config)
+		if err != nil {
+			return err
+		}
+		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
 			return err
@@ -532,22 +532,22 @@ func resourceComputeForwardingRuleUpdate(d *schema.ResourceData, meta interface{
 func resourceComputeForwardingRuleDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/forwardingRules/{{name}}")
 	if err != nil {
 		return err
 	}
 
+	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting ForwardingRule %q", d.Id())
-	res, err := Delete(config, url)
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "ForwardingRule")
 	}
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -597,7 +597,10 @@ func flattenComputeForwardingRuleIPProtocol(v interface{}) interface{} {
 }
 
 func flattenComputeForwardingRuleBackendService(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeForwardingRuleIpVersion(v interface{}) interface{} {
@@ -613,7 +616,10 @@ func flattenComputeForwardingRuleName(v interface{}) interface{} {
 }
 
 func flattenComputeForwardingRuleNetwork(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeForwardingRulePortRange(v interface{}) interface{} {
@@ -621,15 +627,24 @@ func flattenComputeForwardingRulePortRange(v interface{}) interface{} {
 }
 
 func flattenComputeForwardingRulePorts(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return schema.NewSet(schema.HashString, v.([]interface{}))
 }
 
 func flattenComputeForwardingRuleSubnetwork(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeForwardingRuleTarget(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeForwardingRuleLabels(v interface{}) interface{} {

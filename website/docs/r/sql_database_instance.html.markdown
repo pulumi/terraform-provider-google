@@ -34,7 +34,6 @@ resource "google_sql_database_instance" "master" {
 }
 ```
 
-
 ### SQL Second generation
 
 ```hcl
@@ -47,6 +46,64 @@ resource "google_sql_database_instance" "master" {
     # Second-generation instance tiers are based on the machine
     # type. See argument reference below.
     tier = "db-f1-micro"
+  }
+}
+```
+
+### Granular restriction of network access
+
+```hcl
+resource "google_compute_instance" "apps" {
+  count        = 8
+  name         = "apps-${count.index + 1}"
+  machine_type = "f1-micro"
+  
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-1804-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      // Ephemeral IP
+    }
+  }
+}
+
+data "null_data_source" "auth_netw_postgres_allowed_1" {
+  count = "${length(google_compute_instance.apps.*.self_link)}"
+
+  inputs = {
+    name  = "apps-${count.index + 1}"
+    value = "${element(google_compute_instance.apps.*.network_interface.0.access_config.0.assigned_nat_ip, count.index)}"
+  }
+}
+
+data "null_data_source" "auth_netw_postgres_allowed_2" {
+  count = 2
+
+  inputs = {
+    name  = "onprem-${count.index + 1}"
+    value = "${element(list("192.168.1.2", "192.168.2.3"), count.index)}"
+  }
+}
+
+resource "google_sql_database_instance" "postgres" {
+  name = "postgres-instance"
+  database_version = "POSTGRES_9_6"
+
+  settings {
+    tier = "db-f1-micro"
+    
+    ip_configuration {
+      authorized_networks = [
+        "${data.null_data_source.auth_netw_postgres_allowed_1.*.outputs}",
+        "${data.null_data_source.auth_netw_postgres_allowed_2.*.outputs}",
+      ]
+    }
   }
 }
 ```
@@ -244,6 +301,8 @@ when the resource is configured with a `count`.
 
 * `server_ca_cert.0.sha1_fingerprint` - SHA Fingerprint of the CA Cert.
 
+* `service_account_email_address` - The service account email address assigned to the
+instance. This property is applicable only to Second Generation instances.
 
 ## Timeouts
 
@@ -256,8 +315,16 @@ when the resource is configured with a `count`.
 
 ## Import
 
-Database instances can be imported using the `name`, e.g.
+Database instances can be imported using one of any of these accepted formats:
 
 ```
-$ terraform import google_sql_database_instance.master master-instance
+$ terraform import google_sql_database_instance.master projects/{{project}}/instances/{{name}}
+$ terraform import google_sql_database_instance.master {{project}}/{{name}}
+$ terraform import google_sql_database_instance.master {{name}}
+
 ```
+
+~> **NOTE:** Some fields (such as `replica_configuration`) won't show a diff if they are unset in
+config and set on the server.
+When importing, double-check that your config has all the fields set that you expect- just seeing
+no diff isn't sufficient to know that your config could reproduce the imported resource.
