@@ -77,6 +77,7 @@ The following arguments are supported:
   characters must be a dash, lowercase letter, or digit, except the last
   character, which cannot be a dash.
 
+
 - - -
 
 
@@ -99,6 +100,11 @@ The following arguments are supported:
   the value of sizeGb must not be less than the size of the sourceImage
   or the size of the snapshot.
 
+* `type` -
+  (Optional)
+  URL of the disk type resource describing which disk type to use to
+  create the disk. Provide this when creating the disk.
+
 * `image` -
   (Optional)
   The image from which to initialize this disk. This can be
@@ -111,14 +117,14 @@ The following arguments are supported:
   For instance, the image `centos-6-v20180104` includes its family name `centos-6`.
   These images can be referred by family name here.
 
-* `type` -
-  (Optional)
-  URL of the disk type resource describing which disk type to use to
-  create the disk. Provide this when creating the disk.
-
 * `zone` -
   (Optional)
   A reference to the zone where the disk resides.
+
+* `source_image_encryption_key` -
+  (Optional)
+  The customer-supplied encryption key of the source image. Required if
+  the source image is protected by a customer-supplied encryption key.  Structure is documented below.
 
 * `disk_encryption_key` -
   (Optional)
@@ -132,29 +138,35 @@ The following arguments are supported:
   the disk will be encrypted using an automatically generated key and
   you do not need to provide a key to use the disk later.  Structure is documented below.
 
-* `source_image_encryption_key` -
-  (Optional)
-  The customer-supplied encryption key of the source image. Required if
-  the source image is protected by a customer-supplied encryption key.  Structure is documented below.
-
 * `snapshot` -
   (Optional)
   The source snapshot used to create this disk. You can provide this as
   a partial or full URL to the resource. For example, the following are
   valid values:
-  * https://www.googleapis.com/compute/v1/projects/project/global/
-        snapshots/snapshot
-  * projects/project/global/snapshots/snapshot
-  * global/snapshots/snapshot
-  * snapshot
+  * `https://www.googleapis.com/compute/v1/projects/project/global/snapshots/snapshot`
+  * `projects/project/global/snapshots/snapshot`
+  * `global/snapshots/snapshot`
+  * `snapshot`
 
 * `source_snapshot_encryption_key` -
   (Optional)
   The customer-supplied encryption key of the source snapshot. Required
   if the source snapshot is protected by a customer-supplied encryption
   key.  Structure is documented below.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
+
+
+The `source_image_encryption_key` block supports:
+
+* `raw_key` -
+  (Optional)
+  Specifies a 256-bit customer-supplied encryption key, encoded in
+  RFC 4648 base64 to either encrypt or decrypt this resource.
+
+* `sha256` -
+  The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+  encryption key that protects this resource.
 
 The `disk_encryption_key` block supports:
 
@@ -166,18 +178,7 @@ The `disk_encryption_key` block supports:
 * `sha256` -
   The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
   encryption key that protects this resource.
-    
-The `source_image_encryption_key` block supports:
 
-* `raw_key` -
-  (Optional)
-  Specifies a 256-bit customer-supplied encryption key, encoded in
-  RFC 4648 base64 to either encrypt or decrypt this resource.
-
-* `sha256` -
-  The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
-  encryption key that protects this resource.
-    
 The `source_snapshot_encryption_key` block supports:
 
 * `raw_key` -
@@ -188,7 +189,6 @@ The `source_snapshot_encryption_key` block supports:
 * `sha256` -
   The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
   encryption key that protects this resource.
-    
 
 * (Deprecated) `disk_encryption_key_raw`:  This is an alias for
   `disk_encryption_key.raw_key`.  It is deprecated to enhance

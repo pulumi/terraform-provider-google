@@ -73,6 +73,7 @@ func Provider() terraform.ResourceProvider {
 			"google_compute_lb_ip_ranges":            dataSourceGoogleComputeLbIpRanges(),
 			"google_compute_network":                 dataSourceGoogleComputeNetwork(),
 			"google_project":                         dataSourceGoogleProject(),
+			"google_project_services":                dataSourceGoogleProjectServices(),
 			"google_compute_subnetwork":              dataSourceGoogleComputeSubnetwork(),
 			"google_compute_zones":                   dataSourceGoogleComputeZones(),
 			"google_compute_instance_group":          dataSourceGoogleComputeInstanceGroup(),
@@ -98,7 +99,9 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: mergeResourceMaps(
+			GeneratedBinaryAuthorizationResourcesMap,
 			GeneratedComputeResourcesMap,
+			GeneratedContainerAnalysisResourcesMap,
 			GeneratedRedisResourcesMap,
 			GeneratedResourceManagerResourcesMap,
 			map[string]*schema.Resource{
@@ -109,8 +112,10 @@ func Provider() terraform.ResourceProvider {
 				"google_cloudbuild_trigger":                    resourceCloudBuildTrigger(),
 				"google_cloudfunctions_function":               resourceCloudFunctionsFunction(),
 				"google_cloudiot_registry":                     resourceCloudIoTRegistry(),
+				"google_composer_environment":                  resourceComposerEnvironment(),
 				"google_compute_autoscaler":                    resourceComputeAutoscaler(),
 				"google_compute_address":                       resourceComputeAddress(),
+				"google_compute_attached_disk":                 resourceComputeAttachedDisk(),
 				"google_compute_backend_service":               resourceComputeBackendService(),
 				"google_compute_disk":                          resourceComputeDisk(),
 				"google_compute_snapshot":                      resourceComputeSnapshot(),

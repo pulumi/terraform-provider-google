@@ -56,6 +56,7 @@ The following arguments are supported:
   characters must be a dash, lowercase letter, or digit, except the last
   character, which cannot be a dash.
 
+
 - - -
 
 
@@ -201,7 +202,7 @@ The following arguments are supported:
   (Optional)
   A reference to the region where the regional forwarding rule resides.
   This field is not applicable to global forwarding rules.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
 

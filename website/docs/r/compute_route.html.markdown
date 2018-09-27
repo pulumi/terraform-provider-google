@@ -96,6 +96,7 @@ The following arguments are supported:
   (Required)
   The network that this route applies to.
 
+
 - - -
 
 
@@ -142,7 +143,7 @@ The following arguments are supported:
 * `next_hop_vpn_tunnel` -
   (Optional)
   URL to a VpnTunnel that should handle matching packets.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
 

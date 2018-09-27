@@ -99,13 +99,14 @@ The following arguments are supported:
   A reference to the UrlMap resource that defines the mapping from URL
   to the BackendService.
 
+
 - - -
 
 
 * `description` -
   (Optional)
   An optional description of this resource.
-* `project` (Optional) The ID of the project in which the resource belongs.
+* `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
 

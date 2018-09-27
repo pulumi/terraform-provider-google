@@ -176,9 +176,10 @@ func resourceComputeVpnTunnel() *schema.Resource {
 				ForceNew: true,
 			},
 			"router": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
 			"ike_version": {
 				Type:     schema.TypeInt,
@@ -250,11 +251,6 @@ func resourceComputeVpnTunnel() *schema.Resource {
 
 func resourceComputeVpnTunnelCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 
 	obj := make(map[string]interface{})
 	nameProp, err := expandComputeVpnTunnelName(d.Get("name"), d, config)
@@ -330,7 +326,7 @@ func resourceComputeVpnTunnelCreate(d *schema.ResourceData, meta interface{}) er
 	}
 
 	log.Printf("[DEBUG] Creating new VpnTunnel: %#v", obj)
-	res, err := Post(config, url, obj)
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating VpnTunnel: %s", err)
 	}
@@ -342,6 +338,10 @@ func resourceComputeVpnTunnelCreate(d *schema.ResourceData, meta interface{}) er
 	}
 	d.SetId(id)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -366,17 +366,12 @@ func resourceComputeVpnTunnelCreate(d *schema.ResourceData, meta interface{}) er
 func resourceComputeVpnTunnelRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/vpnTunnels/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := Get(config, url)
+	res, err := sendRequest(config, "GET", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeVpnTunnel %q", d.Id()))
 	}
@@ -426,6 +421,10 @@ func resourceComputeVpnTunnelRead(d *schema.ResourceData, meta interface{}) erro
 	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading VpnTunnel: %s", err)
 	}
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading VpnTunnel: %s", err)
 	}
@@ -435,15 +434,6 @@ func resourceComputeVpnTunnelRead(d *schema.ResourceData, meta interface{}) erro
 
 func resourceComputeVpnTunnelUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
-	var url string
-	var res map[string]interface{}
-	op := &compute.Operation{}
 
 	d.Partial(true)
 
@@ -458,15 +448,20 @@ func resourceComputeVpnTunnelUpdate(d *schema.ResourceData, meta interface{}) er
 		labelFingerprintProp := d.Get("label_fingerprint")
 		obj["labelFingerprint"] = labelFingerprintProp
 
-		url, err = replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/vpnTunnels/{{name}}/setLabels")
+		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/vpnTunnels/{{name}}/setLabels")
 		if err != nil {
 			return err
 		}
-		res, err = sendRequest(config, "POST", url, obj)
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating VpnTunnel %q: %s", d.Id(), err)
 		}
 
+		project, err := getProject(d, config)
+		if err != nil {
+			return err
+		}
+		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
 			return err
@@ -492,22 +487,22 @@ func resourceComputeVpnTunnelUpdate(d *schema.ResourceData, meta interface{}) er
 func resourceComputeVpnTunnelDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/beta/projects/{{project}}/regions/{{region}}/vpnTunnels/{{name}}")
 	if err != nil {
 		return err
 	}
 
+	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting VpnTunnel %q", d.Id())
-	res, err := Delete(config, url)
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "VpnTunnel")
 	}
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -553,14 +548,17 @@ func flattenComputeVpnTunnelDescription(v interface{}) interface{} {
 }
 
 func flattenComputeVpnTunnelTargetVpnGateway(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeVpnTunnelRouter(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
-	return NameFromSelfLinkStateFunc(v)
+	return ConvertSelfLinkToV1(v.(string))
 }
 
 func flattenComputeVpnTunnelPeerIp(v interface{}) interface{} {
@@ -586,11 +584,17 @@ func flattenComputeVpnTunnelIkeVersion(v interface{}) interface{} {
 }
 
 func flattenComputeVpnTunnelLocalTrafficSelector(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return schema.NewSet(schema.HashString, v.([]interface{}))
 }
 
 func flattenComputeVpnTunnelRemoteTrafficSelector(v interface{}) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return schema.NewSet(schema.HashString, v.([]interface{}))
 }
 
 func flattenComputeVpnTunnelLabels(v interface{}) interface{} {
