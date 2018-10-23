@@ -168,18 +168,18 @@ func resourceComputeInstance() *schema.Resource {
 						},
 
 						"address": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
-							ForceNew: true,
-							Computed: true,
-						},
-
-						"network_ip": &schema.Schema{
 							Type:       schema.TypeString,
 							Optional:   true,
 							ForceNew:   true,
 							Computed:   true,
-							Deprecated: "Please use address",
+							Deprecated: "Please use network_ip",
+						},
+
+						"network_ip": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							Computed: true,
 						},
 
 						"access_config": &schema.Schema{
@@ -204,8 +204,9 @@ func resourceComputeInstance() *schema.Resource {
 									// nat_ip can be both optional and computed.
 									// Consider deprecating it.
 									"assigned_nat_ip": &schema.Schema{
-										Type:     schema.TypeString,
-										Computed: true,
+										Type:       schema.TypeString,
+										Computed:   true,
+										Deprecated: "Use network_interface.access_config.nat_ip instead.",
 									},
 
 									"public_ptr_domain_name": &schema.Schema{

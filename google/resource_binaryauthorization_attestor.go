@@ -33,6 +33,9 @@ func resourceBinaryAuthorizationAttestor() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: resourceBinaryAuthorizationAttestorImport,
 		},
+		DeprecationMessage: `This resource is in beta and will be removed from this provider.
+Use the BinaryAuthorizationAttestor resource in the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta resources.`,
 
 		Schema: map[string]*schema.Schema{
 			"attestation_authority_note": {
@@ -314,7 +317,7 @@ func expandBinaryAuthorizationAttestorDescription(v interface{}, d *schema.Resou
 
 func expandBinaryAuthorizationAttestorAttestationAuthorityNote(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -324,18 +327,24 @@ func expandBinaryAuthorizationAttestorAttestationAuthorityNote(v interface{}, d 
 	transformedNoteReference, err := expandBinaryAuthorizationAttestorAttestationAuthorityNoteNoteReference(original["note_reference"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedNoteReference); val.IsValid() && !isEmptyValue(val) {
+		transformed["noteReference"] = transformedNoteReference
 	}
-	transformed["noteReference"] = transformedNoteReference
+
 	transformedPublicKeys, err := expandBinaryAuthorizationAttestorAttestationAuthorityNotePublicKeys(original["public_keys"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedPublicKeys); val.IsValid() && !isEmptyValue(val) {
+		transformed["publicKeys"] = transformedPublicKeys
 	}
-	transformed["publicKeys"] = transformedPublicKeys
+
 	transformedDelegationServiceAccountEmail, err := expandBinaryAuthorizationAttestorAttestationAuthorityNoteDelegationServiceAccountEmail(original["delegation_service_account_email"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedDelegationServiceAccountEmail); val.IsValid() && !isEmptyValue(val) {
+		transformed["delegationServiceAccountEmail"] = transformedDelegationServiceAccountEmail
 	}
-	transformed["delegationServiceAccountEmail"] = transformedDelegationServiceAccountEmail
+
 	return transformed, nil
 }
 
@@ -357,24 +366,33 @@ func expandBinaryAuthorizationAttestorAttestationAuthorityNotePublicKeys(v inter
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedComment, err := expandBinaryAuthorizationAttestorAttestationAuthorityNotePublicKeysComment(original["comment"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedComment); val.IsValid() && !isEmptyValue(val) {
+			transformed["comment"] = transformedComment
 		}
-		transformed["comment"] = transformedComment
+
 		transformedId, err := expandBinaryAuthorizationAttestorAttestationAuthorityNotePublicKeysId(original["id"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedId); val.IsValid() && !isEmptyValue(val) {
+			transformed["id"] = transformedId
 		}
-		transformed["id"] = transformedId
+
 		transformedAsciiArmoredPgpPublicKey, err := expandBinaryAuthorizationAttestorAttestationAuthorityNotePublicKeysAsciiArmoredPgpPublicKey(original["ascii_armored_pgp_public_key"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedAsciiArmoredPgpPublicKey); val.IsValid() && !isEmptyValue(val) {
+			transformed["asciiArmoredPgpPublicKey"] = transformedAsciiArmoredPgpPublicKey
 		}
-		transformed["asciiArmoredPgpPublicKey"] = transformedAsciiArmoredPgpPublicKey
+
 		req = append(req, transformed)
 	}
 	return req, nil

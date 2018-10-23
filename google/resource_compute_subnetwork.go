@@ -103,6 +103,17 @@ func resourceComputeSubnetwork() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"private_ip_google_access": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"region": {
+				Type:             schema.TypeString,
+				Computed:         true,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+			},
 			"secondary_ip_range": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -121,17 +132,6 @@ func resourceComputeSubnetwork() *schema.Resource {
 						},
 					},
 				},
-			},
-			"private_ip_google_access": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"region": {
-				Type:             schema.TypeString,
-				Computed:         true,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
 			"creation_timestamp": {
 				Type:     schema.TypeString,
@@ -639,19 +639,26 @@ func expandComputeSubnetworkSecondaryIpRange(v interface{}, d *schema.ResourceDa
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedRangeName, err := expandComputeSubnetworkSecondaryIpRangeRangeName(original["range_name"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedRangeName); val.IsValid() && !isEmptyValue(val) {
+			transformed["rangeName"] = transformedRangeName
 		}
-		transformed["rangeName"] = transformedRangeName
+
 		transformedIpCidrRange, err := expandComputeSubnetworkSecondaryIpRangeIpCidrRange(original["ip_cidr_range"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedIpCidrRange); val.IsValid() && !isEmptyValue(val) {
+			transformed["ipCidrRange"] = transformedIpCidrRange
 		}
-		transformed["ipCidrRange"] = transformedIpCidrRange
+
 		req = append(req, transformed)
 	}
 	return req, nil

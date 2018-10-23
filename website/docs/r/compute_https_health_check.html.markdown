@@ -31,6 +31,7 @@ should be preferred for all uses except
 [Network Load Balancers](https://cloud.google.com/compute/docs/load-balancing/network/)
 which still require the legacy version.
 
+
 To get more information about HttpsHealthCheck, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/latest/httpsHealthChecks)
@@ -41,7 +42,7 @@ To get more information about HttpsHealthCheck, see:
 
 ```hcl
 resource "google_compute_https_health_check" "default" {
-  name         = "test"
+  name         = "authentication-health-check"
   request_path = "/health_check"
 
   timeout_sec        = 1

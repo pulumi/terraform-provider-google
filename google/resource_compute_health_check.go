@@ -63,16 +63,6 @@ func resourceComputeHealthCheck() *schema.Resource {
 				Optional: true,
 				Default:  2,
 			},
-			"timeout_sec": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  5,
-			},
-			"unhealthy_threshold": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  2,
-			},
 			"http_health_check": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -82,11 +72,6 @@ func resourceComputeHealthCheck() *schema.Resource {
 						"host": {
 							Type:     schema.TypeString,
 							Optional: true,
-						},
-						"request_path": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Default:  "/",
 						},
 						"port": {
 							Type:     schema.TypeInt,
@@ -98,6 +83,11 @@ func resourceComputeHealthCheck() *schema.Resource {
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
 							Default:      "NONE",
+						},
+						"request_path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "/",
 						},
 					},
 				},
@@ -113,11 +103,6 @@ func resourceComputeHealthCheck() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"request_path": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Default:  "/",
-						},
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
@@ -129,16 +114,32 @@ func resourceComputeHealthCheck() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
 							Default:      "NONE",
 						},
+						"request_path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "/",
+						},
 					},
 				},
 				ConflictsWith: []string{"http_health_check", "tcp_health_check", "ssl_health_check"},
 			},
-			"tcp_health_check": {
+			"ssl_health_check": {
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  443,
+						},
+						"proxy_header": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Default:      "NONE",
+						},
 						"request": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -147,6 +148,16 @@ func resourceComputeHealthCheck() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+					},
+				},
+				ConflictsWith: []string{"http_health_check", "https_health_check", "tcp_health_check"},
+			},
+			"tcp_health_check": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
@@ -158,16 +169,6 @@ func resourceComputeHealthCheck() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
 							Default:      "NONE",
 						},
-					},
-				},
-				ConflictsWith: []string{"http_health_check", "https_health_check", "ssl_health_check"},
-			},
-			"ssl_health_check": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
 						"request": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -176,20 +177,19 @@ func resourceComputeHealthCheck() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"port": {
-							Type:     schema.TypeInt,
-							Optional: true,
-							Default:  443,
-						},
-						"proxy_header": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
-							Default:      "NONE",
-						},
 					},
 				},
-				ConflictsWith: []string{"http_health_check", "https_health_check", "tcp_health_check"},
+				ConflictsWith: []string{"http_health_check", "https_health_check", "ssl_health_check"},
+			},
+			"timeout_sec": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  5,
+			},
+			"unhealthy_threshold": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  2,
 			},
 			"creation_timestamp": {
 				Type:     schema.TypeString,
@@ -774,7 +774,7 @@ func expandComputeHealthCheckUnhealthyThreshold(v interface{}, d *schema.Resourc
 
 func expandComputeHealthCheckHttpHealthCheck(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -784,23 +784,31 @@ func expandComputeHealthCheckHttpHealthCheck(v interface{}, d *schema.ResourceDa
 	transformedHost, err := expandComputeHealthCheckHttpHealthCheckHost(original["host"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedHost); val.IsValid() && !isEmptyValue(val) {
+		transformed["host"] = transformedHost
 	}
-	transformed["host"] = transformedHost
+
 	transformedRequestPath, err := expandComputeHealthCheckHttpHealthCheckRequestPath(original["request_path"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRequestPath); val.IsValid() && !isEmptyValue(val) {
+		transformed["requestPath"] = transformedRequestPath
 	}
-	transformed["requestPath"] = transformedRequestPath
+
 	transformedPort, err := expandComputeHealthCheckHttpHealthCheckPort(original["port"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedPort); val.IsValid() && !isEmptyValue(val) {
+		transformed["port"] = transformedPort
 	}
-	transformed["port"] = transformedPort
+
 	transformedProxyHeader, err := expandComputeHealthCheckHttpHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
+		transformed["proxyHeader"] = transformedProxyHeader
 	}
-	transformed["proxyHeader"] = transformedProxyHeader
+
 	return transformed, nil
 }
 
@@ -822,7 +830,7 @@ func expandComputeHealthCheckHttpHealthCheckProxyHeader(v interface{}, d *schema
 
 func expandComputeHealthCheckHttpsHealthCheck(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -832,23 +840,31 @@ func expandComputeHealthCheckHttpsHealthCheck(v interface{}, d *schema.ResourceD
 	transformedHost, err := expandComputeHealthCheckHttpsHealthCheckHost(original["host"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedHost); val.IsValid() && !isEmptyValue(val) {
+		transformed["host"] = transformedHost
 	}
-	transformed["host"] = transformedHost
+
 	transformedRequestPath, err := expandComputeHealthCheckHttpsHealthCheckRequestPath(original["request_path"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRequestPath); val.IsValid() && !isEmptyValue(val) {
+		transformed["requestPath"] = transformedRequestPath
 	}
-	transformed["requestPath"] = transformedRequestPath
+
 	transformedPort, err := expandComputeHealthCheckHttpsHealthCheckPort(original["port"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedPort); val.IsValid() && !isEmptyValue(val) {
+		transformed["port"] = transformedPort
 	}
-	transformed["port"] = transformedPort
+
 	transformedProxyHeader, err := expandComputeHealthCheckHttpsHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
+		transformed["proxyHeader"] = transformedProxyHeader
 	}
-	transformed["proxyHeader"] = transformedProxyHeader
+
 	return transformed, nil
 }
 
@@ -870,7 +886,7 @@ func expandComputeHealthCheckHttpsHealthCheckProxyHeader(v interface{}, d *schem
 
 func expandComputeHealthCheckTcpHealthCheck(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -880,23 +896,31 @@ func expandComputeHealthCheckTcpHealthCheck(v interface{}, d *schema.ResourceDat
 	transformedRequest, err := expandComputeHealthCheckTcpHealthCheckRequest(original["request"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRequest); val.IsValid() && !isEmptyValue(val) {
+		transformed["request"] = transformedRequest
 	}
-	transformed["request"] = transformedRequest
+
 	transformedResponse, err := expandComputeHealthCheckTcpHealthCheckResponse(original["response"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedResponse); val.IsValid() && !isEmptyValue(val) {
+		transformed["response"] = transformedResponse
 	}
-	transformed["response"] = transformedResponse
+
 	transformedPort, err := expandComputeHealthCheckTcpHealthCheckPort(original["port"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedPort); val.IsValid() && !isEmptyValue(val) {
+		transformed["port"] = transformedPort
 	}
-	transformed["port"] = transformedPort
+
 	transformedProxyHeader, err := expandComputeHealthCheckTcpHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
+		transformed["proxyHeader"] = transformedProxyHeader
 	}
-	transformed["proxyHeader"] = transformedProxyHeader
+
 	return transformed, nil
 }
 
@@ -918,7 +942,7 @@ func expandComputeHealthCheckTcpHealthCheckProxyHeader(v interface{}, d *schema.
 
 func expandComputeHealthCheckSslHealthCheck(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -928,23 +952,31 @@ func expandComputeHealthCheckSslHealthCheck(v interface{}, d *schema.ResourceDat
 	transformedRequest, err := expandComputeHealthCheckSslHealthCheckRequest(original["request"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRequest); val.IsValid() && !isEmptyValue(val) {
+		transformed["request"] = transformedRequest
 	}
-	transformed["request"] = transformedRequest
+
 	transformedResponse, err := expandComputeHealthCheckSslHealthCheckResponse(original["response"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedResponse); val.IsValid() && !isEmptyValue(val) {
+		transformed["response"] = transformedResponse
 	}
-	transformed["response"] = transformedResponse
+
 	transformedPort, err := expandComputeHealthCheckSslHealthCheckPort(original["port"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedPort); val.IsValid() && !isEmptyValue(val) {
+		transformed["port"] = transformedPort
 	}
-	transformed["port"] = transformedPort
+
 	transformedProxyHeader, err := expandComputeHealthCheckSslHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
+		transformed["proxyHeader"] = transformedProxyHeader
 	}
-	transformed["proxyHeader"] = transformedProxyHeader
+
 	return transformed, nil
 }
 

@@ -69,30 +69,6 @@ func resourceComputeRegionDisk() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			"size": {
-				Type:     schema.TypeInt,
-				Computed: true,
-				Optional: true,
-			},
-			"type": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
-				Default:          "pd-standard",
-			},
-			"region": {
-				Type:             schema.TypeString,
-				Computed:         true,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
-			},
 			"disk_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -111,6 +87,23 @@ func resourceComputeRegionDisk() *schema.Resource {
 						},
 					},
 				},
+			},
+			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			"region": {
+				Type:             schema.TypeString,
+				Computed:         true,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+			},
+			"size": {
+				Type:     schema.TypeInt,
+				Computed: true,
+				Optional: true,
 			},
 			"snapshot": {
 				Type:             schema.TypeString,
@@ -136,6 +129,13 @@ func resourceComputeRegionDisk() *schema.Resource {
 						},
 					},
 				},
+			},
+			"type": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Default:          "pd-standard",
 			},
 			"creation_timestamp": {
 				Type:     schema.TypeString,
@@ -733,7 +733,7 @@ func expandComputeRegionDiskRegion(v interface{}, d *schema.ResourceData, config
 
 func expandComputeRegionDiskDiskEncryptionKey(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -743,13 +743,17 @@ func expandComputeRegionDiskDiskEncryptionKey(v interface{}, d *schema.ResourceD
 	transformedRawKey, err := expandComputeRegionDiskDiskEncryptionKeyRawKey(original["raw_key"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRawKey); val.IsValid() && !isEmptyValue(val) {
+		transformed["rawKey"] = transformedRawKey
 	}
-	transformed["rawKey"] = transformedRawKey
+
 	transformedSha256, err := expandComputeRegionDiskDiskEncryptionKeySha256(original["sha256"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedSha256); val.IsValid() && !isEmptyValue(val) {
+		transformed["sha256"] = transformedSha256
 	}
-	transformed["sha256"] = transformedSha256
+
 	return transformed, nil
 }
 
@@ -771,7 +775,7 @@ func expandComputeRegionDiskSnapshot(v interface{}, d *schema.ResourceData, conf
 
 func expandComputeRegionDiskSourceSnapshotEncryptionKey(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -781,13 +785,17 @@ func expandComputeRegionDiskSourceSnapshotEncryptionKey(v interface{}, d *schema
 	transformedRawKey, err := expandComputeRegionDiskSourceSnapshotEncryptionKeyRawKey(original["raw_key"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRawKey); val.IsValid() && !isEmptyValue(val) {
+		transformed["rawKey"] = transformedRawKey
 	}
-	transformed["rawKey"] = transformedRawKey
+
 	transformedSha256, err := expandComputeRegionDiskSourceSnapshotEncryptionKeySha256(original["sha256"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedSha256); val.IsValid() && !isEmptyValue(val) {
+		transformed["sha256"] = transformedSha256
 	}
-	transformed["sha256"] = transformedSha256
+
 	return transformed, nil
 }
 

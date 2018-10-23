@@ -25,6 +25,7 @@ A ForwardingRule resource. A ForwardingRule resource specifies which pool
 of target virtual machines to forward a packet to if it matches the given
 [IPAddress, IPProtocol, portRange] tuple.
 
+
 To get more information about ForwardingRule, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/latest/forwardingRule)
@@ -38,6 +39,10 @@ resource "google_compute_forwarding_rule" "default" {
   name       = "website-forwarding-rule"
   target     = "${google_compute_target_pool.default.self_link}"
   port_range = "80"
+}
+
+resource "google_compute_target_pool" "default" {
+  name = "website-target-pool"
 }
 ```
 
@@ -177,7 +182,8 @@ The following arguments are supported:
 
 * `labels` -
   (Optional)
-  Labels to apply to this forwarding rule.  A list of key->value pairs.
+  Labels to apply to this forwarding rule.  A list of key->value pairs.  This property is in beta, and should be used with the terraform-provider-google-beta provider.
+  See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 
 * `network_tier` -
   (Optional)
@@ -196,7 +202,8 @@ The following arguments are supported:
   character must be a lowercase letter, and all following characters
   must be a dash, lowercase letter, or digit, except the last
   character, which cannot be a dash.
-  This field is only used for internal load balancing.
+  This field is only used for internal load balancing.  This property is in beta, and should be used with the terraform-provider-google-beta provider.
+  See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 
 * `region` -
   (Optional)
@@ -220,7 +227,8 @@ In addition to the arguments listed above, the following computed attributes are
 
 * `service_name` -
   The internal fully qualified service name for this Forwarding Rule.
-  This field is only used for internal load balancing.
+  This field is only used for internal load balancing.  This property is in beta, and should be used with the terraform-provider-google-beta provider.
+  See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 * `self_link` - The URI of the created resource.
 
 

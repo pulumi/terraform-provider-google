@@ -56,10 +56,6 @@ func resourceComputeRouter() *schema.Resource {
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
-			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 			"bgp": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -88,11 +84,11 @@ func resourceComputeRouter() *schema.Resource {
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"range": {
+									"description": {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"description": {
+									"range": {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
@@ -101,6 +97,10 @@ func resourceComputeRouter() *schema.Resource {
 						},
 					},
 				},
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"region": {
 				Type:             schema.TypeString,
@@ -140,7 +140,7 @@ func resourceComputeRouterCreate(d *schema.ResourceData, meta interface{}) error
 	descriptionProp, err := expandComputeRouterDescription(d.Get("description"), d, config)
 	if err != nil {
 		return err
-	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(descriptionProp)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+	} else if v, ok := d.GetOkExists("description"); ok || !reflect.DeepEqual(v, descriptionProp) {
 		obj["description"] = descriptionProp
 	}
 	networkProp, err := expandComputeRouterNetwork(d.Get("network"), d, config)
@@ -270,7 +270,7 @@ func resourceComputeRouterUpdate(d *schema.ResourceData, meta interface{}) error
 	descriptionProp, err := expandComputeRouterDescription(d.Get("description"), d, config)
 	if err != nil {
 		return err
-	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+	} else if v, ok := d.GetOkExists("description"); ok || !reflect.DeepEqual(v, descriptionProp) {
 		obj["description"] = descriptionProp
 	}
 	networkProp, err := expandComputeRouterNetwork(d.Get("network"), d, config)
@@ -491,7 +491,7 @@ func expandComputeRouterNetwork(v interface{}, d *schema.ResourceData, config *C
 
 func expandComputeRouterBgp(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -501,23 +501,31 @@ func expandComputeRouterBgp(v interface{}, d *schema.ResourceData, config *Confi
 	transformedAsn, err := expandComputeRouterBgpAsn(original["asn"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedAsn); val.IsValid() && !isEmptyValue(val) {
+		transformed["asn"] = transformedAsn
 	}
-	transformed["asn"] = transformedAsn
+
 	transformedAdvertiseMode, err := expandComputeRouterBgpAdvertiseMode(original["advertise_mode"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedAdvertiseMode); val.IsValid() && !isEmptyValue(val) {
+		transformed["advertiseMode"] = transformedAdvertiseMode
 	}
-	transformed["advertiseMode"] = transformedAdvertiseMode
+
 	transformedAdvertisedGroups, err := expandComputeRouterBgpAdvertisedGroups(original["advertised_groups"], d, config)
 	if err != nil {
 		return nil, err
+	} else {
+		transformed["advertisedGroups"] = transformedAdvertisedGroups
 	}
-	transformed["advertisedGroups"] = transformedAdvertisedGroups
+
 	transformedAdvertisedIpRanges, err := expandComputeRouterBgpAdvertisedIpRanges(original["advertised_ip_ranges"], d, config)
 	if err != nil {
 		return nil, err
+	} else {
+		transformed["advertisedIpRanges"] = transformedAdvertisedIpRanges
 	}
-	transformed["advertisedIpRanges"] = transformedAdvertisedIpRanges
+
 	return transformed, nil
 }
 
@@ -537,19 +545,26 @@ func expandComputeRouterBgpAdvertisedIpRanges(v interface{}, d *schema.ResourceD
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedRange, err := expandComputeRouterBgpAdvertisedIpRangesRange(original["range"], d, config)
 		if err != nil {
 			return nil, err
+		} else {
+			transformed["range"] = transformedRange
 		}
-		transformed["range"] = transformedRange
+
 		transformedDescription, err := expandComputeRouterBgpAdvertisedIpRangesDescription(original["description"], d, config)
 		if err != nil {
 			return nil, err
+		} else {
+			transformed["description"] = transformedDescription
 		}
-		transformed["description"] = transformedDescription
+
 		req = append(req, transformed)
 	}
 	return req, nil

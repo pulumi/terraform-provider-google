@@ -98,6 +98,8 @@ The following arguments are supported:
     exactly one version must not specify a target size. It means that versions with
     a target size will respect the setting, and the one without target size will
     be applied to all remaining Instances (top level target_size - each version target_size).
+    This property is in beta, and should be used with the terraform-provider-google-beta provider.
+    See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 
 * `name` - (Required) The name of the instance group manager. Must be 1-63
     characters long and comply with
@@ -118,10 +120,10 @@ The following arguments are supported:
 * `project` - (Optional) The ID of the project in which the resource belongs. If it
     is not provided, the provider project is used.
 
-* `update_strategy` - (Optional, Default `"RESTART"`) If the `instance_template`
+* `update_strategy` - (Optional, Default `"REPLACE"`) If the `instance_template`
     resource is modified, a value of `"NONE"` will prevent any of the managed
-    instances from being restarted by Terraform. A value of `"RESTART"` will
-    restart all of the instances at once. `"ROLLING_UPDATE"` is supported as [Beta feature].
+    instances from being restarted by Terraform. A value of `"REPLACE"` will
+    restart all of the instances at once. `"ROLLING_UPDATE"` is supported as a beta feature.
     A value of `"ROLLING_UPDATE"` requires `rolling_update_policy` block to be set
 
 * `target_size` - (Optional) The target number of running instances for this managed
@@ -138,10 +140,14 @@ The following arguments are supported:
 
 ---
 
-* `auto_healing_policies` - (Optional, [Beta](/docs/providers/google/index.html#beta-features)) The autohealing policies for this managed instance
+* `auto_healing_policies` - (Optional) The autohealing policies for this managed instance
 group. You can specify only one value. Structure is documented below. For more information, see the [official documentation](https://cloud.google.com/compute/docs/instance-groups/creating-groups-of-managed-instances#monitoring_groups).
+This property is in beta, and should be used with the terraform-provider-google-beta provider.
+See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 
-* `rolling_update_policy` - (Optional, [Beta](/docs/providers/google/index.html#beta-features)) The update policy for this managed instance group. Structure is documented below. For more information, see the [official documentation](https://cloud.google.com/compute/docs/instance-groups/updating-managed-instance-groups) and [API](https://cloud.google.com/compute/docs/reference/rest/beta/instanceGroupManagers/patch)
+* `rolling_update_policy` - (Optional) The update policy for this managed instance group. Structure is documented below. For more information, see the [official documentation](https://cloud.google.com/compute/docs/instance-groups/updating-managed-instance-groups) and [API](https://cloud.google.com/compute/docs/reference/rest/beta/instanceGroupManagers/patch)
+This property is in beta, and should be used with the terraform-provider-google-beta provider.
+See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 - - -
 
 The **rolling_update_policy** block supports:

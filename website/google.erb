@@ -6,8 +6,22 @@
     <a href="/docs/providers/index.html">All Providers</a>
     </li>
 
-    <li<%= sidebar_current("docs-google-index") %>>
-    <a href="/docs/providers/google/index.html">Google Provider</a>
+    <li<%= sidebar_current("docs-google-provider") %>>
+      <a href="/docs/providers/google/index.html">Google Provider</a>
+      <ul class="nav nav-visible">
+        <li<%= sidebar_current("docs-google-provider-x") %>>
+          <a href="/docs/providers/google/index.html">Provider Info</a>
+        </li>
+        <li<%= sidebar_current("docs-google-provider-getting-started") %>>
+          <a href="/docs/providers/google/getting_started.html">Getting Started</a>
+        </li>
+        <li<%= sidebar_current("docs-google-provider-reference") %>>
+          <a href="/docs/providers/google/provider_reference.html">google provider reference</a>
+        </li>
+        <li<%= sidebar_current("docs-google-provider-versions") %>>
+          <a href="/docs/providers/google/provider_versions.html">Google Provider Versions</a>
+        </li>
+      </ul>
     </li>
 
     <li<%= sidebar_current("docs-google-datasource") %>>
@@ -121,6 +135,15 @@
     </ul>
     </li>
 
+    <li<%= sidebar_current("docs-google-app-engine") %>>
+    <a href="#">Google App Engine Resources</a>
+    <ul class="nav nav-visible">
+      <li<%= sidebar_current("docs-google-app-engine-application") %>>
+      <a href="/docs/providers/google/r/app_engine_application.html">google_app_engine_application</a>
+      </li>
+    </ul>
+    </li>
+
     <li<%= sidebar_current("docs-google-bigquery") %>>
     <a href="#">Google BigQuery Resources</a>
     <ul class="nav nav-visible">
@@ -161,6 +184,15 @@
       <a href="/docs/providers/google/r/cloudbuild_trigger.html">google_cloudbuild_trigger</a>
       </li>
     </ul>
+    </li>
+
+    <li<%= sidebar_current("docs-google-composer") %>>
+      <a href="#">Google Cloud Composer Resources</a>
+      <ul class="nav nav-visible">
+        <li<%= sidebar_current("docs-google-composer-environment") %>>
+          <a href="/docs/providers/google/r/composer_environment.html">google_composer_environment</a>
+        </li>
+      </ul>
     </li>
 
     <li<%= sidebar_current("docs-google-cloudfunctions") %>>
@@ -523,6 +555,15 @@
     </ul>
     </li>
 
+    <li<%= sidebar_current("docs-google-filestore") %>>
+    <a href="#">Google Filestore Resources</a>
+    <ul class="nav nav-visible">
+      <li<%= sidebar_current("docs-google-filestore-instance") %>>
+          <a href="/docs/providers/google/r/filestore_instance.html">google_filestore_instance</a>
+      </li>
+    </ul>
+    </li>
+
     <li<%= sidebar_current("docs-google-pubsub") %>>
     <a href="#">Google PubSub Resources</a>
     <ul class="nav nav-visible">
@@ -666,6 +707,16 @@
       <li<%= sidebar_current("docs-google-logging-project-sink") %>>
       <a href="/docs/providers/google/r/logging_project_sink.html">google_logging_project_sink</a>
       </li>
+    </ul>
+    </li>
+
+    <li<%= sidebar_current("docs-google-monitoring") %>>
+    <a href="#">Google Stackdriver Monitoring Resources</a>
+    <ul class="nav nav-visible">
+      <li<%= sidebar_current("docs-google-monitoring-alert-policy") %>>
+      <a href="/docs/providers/google/r/monitoring_alert_policy.html">google_monitoring_alert_policy</a>
+      </li>
+
     </ul>
     </li>
 

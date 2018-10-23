@@ -25,6 +25,7 @@ description: |-
 Represents a TargetHttpsProxy resource, which is used by one or more
 global forwarding rule to route incoming HTTPS requests to a URL map.
 
+
 To get more information about TargetHttpsProxy, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/latest/targetHttpsProxies)
@@ -36,14 +37,12 @@ To get more information about TargetHttpsProxy, see:
 ```hcl
 resource "google_compute_target_https_proxy" "default" {
   name             = "test-proxy"
-  description      = "a description"
   url_map          = "${google_compute_url_map.default.self_link}"
   ssl_certificates = ["${google_compute_ssl_certificate.default.self_link}"]
 }
 
 resource "google_compute_ssl_certificate" "default" {
   name        = "my-certificate"
-  description = "a description"
   private_key = "${file("path/to/private.key")}"
   certificate = "${file("path/to/certificate.crt")}"
 }
@@ -71,7 +70,7 @@ resource "google_compute_url_map" "default" {
 }
 
 resource "google_compute_backend_service" "default" {
-  name        = "default-backend"
+  name        = "backend-service"
   port_name   = "http"
   protocol    = "HTTP"
   timeout_sec = 10
@@ -80,7 +79,7 @@ resource "google_compute_backend_service" "default" {
 }
 
 resource "google_compute_http_health_check" "default" {
-  name               = "test"
+  name               = "http-health-check"
   request_path       = "/"
   check_interval_sec = 1
   timeout_sec        = 1

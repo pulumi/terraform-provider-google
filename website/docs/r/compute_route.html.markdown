@@ -43,6 +43,7 @@ sending virtual machine's routing table will be dropped.
 A Route resource must have exactly one specification of either
 nextHopGateway, nextHopInstance, nextHopIp, or nextHopVpnTunnel.
 
+
 To get more information about Route, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/rest/v1/routes)
@@ -52,23 +53,16 @@ To get more information about Route, see:
 ## Example Usage
 
 ```hcl
-resource "google_compute_network" "default" {
-  name = "compute-network"
-}
-
-resource "google_compute_subnetwork" "default" {
-  name          = "compute-subnetwork"
-  ip_cidr_range = "10.0.0.0/16"
-  network       = "${google_compute_network.default.self_link}"
-  region        = "us-central1"
-}
-
 resource "google_compute_route" "default" {
   name        = "network-route"
   dest_range  = "15.0.0.0/24"
-  network     = "${google_compute_network.foobar.name}"
-  next_hop_ip = "10.0.1.5"
+  network     = "${google_compute_network.default.name}"
+  next_hop_ip = "10.132.1.5"
   priority    = 100
+}
+
+resource "google_compute_network" "default" {
+  name = "compute-network"
 }
 ```
 

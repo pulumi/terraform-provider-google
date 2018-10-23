@@ -67,6 +67,14 @@ func resourceComputeAddress() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Deprecated: `This field is in beta and will be removed from this provider.
+Use the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta fields.`,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
 			"network_tier": {
 				Type:         schema.TypeString,
 				Computed:     true,
@@ -74,19 +82,14 @@ func resourceComputeAddress() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"PREMIUM", "STANDARD", ""}, false),
 			},
-			"subnetwork": {
+			"region": {
 				Type:             schema.TypeString,
 				Computed:         true,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
-			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			"region": {
+			"subnetwork": {
 				Type:             schema.TypeString,
 				Computed:         true,
 				Optional:         true,
@@ -100,6 +103,9 @@ func resourceComputeAddress() *schema.Resource {
 			"label_fingerprint": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Deprecated: `This field is in beta and will be removed from this provider.
+Use the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta fields.`,
 			},
 			"users": {
 				Type:     schema.TypeList,

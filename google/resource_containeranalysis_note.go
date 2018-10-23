@@ -33,6 +33,9 @@ func resourceContainerAnalysisNote() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: resourceContainerAnalysisNoteImport,
 		},
+		DeprecationMessage: `This resource is in beta and will be removed from this provider.
+Use the ContainerAnalysisNote resource in the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta resources.`,
 
 		Schema: map[string]*schema.Schema{
 			"attestation_authority": {
@@ -89,7 +92,7 @@ func resourceContainerAnalysisNoteCreate(d *schema.ResourceData, meta interface{
 		obj["attestationAuthority"] = attestationAuthorityProp
 	}
 
-	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1alpha1/projects/{{project}}/notes?noteId={{name}}")
+	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1beta1/projects/{{project}}/notes?noteId={{name}}")
 	if err != nil {
 		return err
 	}
@@ -115,7 +118,7 @@ func resourceContainerAnalysisNoteCreate(d *schema.ResourceData, meta interface{
 func resourceContainerAnalysisNoteRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1alpha1/projects/{{project}}/notes/{{name}}")
+	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1beta1/projects/{{project}}/notes/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -159,7 +162,7 @@ func resourceContainerAnalysisNoteUpdate(d *schema.ResourceData, meta interface{
 		obj["attestationAuthority"] = attestationAuthorityProp
 	}
 
-	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1alpha1/projects/{{project}}/notes/{{name}}")
+	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1beta1/projects/{{project}}/notes/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -187,7 +190,7 @@ func resourceContainerAnalysisNoteUpdate(d *schema.ResourceData, meta interface{
 func resourceContainerAnalysisNoteDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1alpha1/projects/{{project}}/notes/{{name}}")
+	url, err := replaceVars(d, config, "https://containeranalysis.googleapis.com/v1beta1/projects/{{project}}/notes/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -254,7 +257,7 @@ func expandContainerAnalysisNoteName(v interface{}, d *schema.ResourceData, conf
 
 func expandContainerAnalysisNoteAttestationAuthority(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -264,14 +267,16 @@ func expandContainerAnalysisNoteAttestationAuthority(v interface{}, d *schema.Re
 	transformedHint, err := expandContainerAnalysisNoteAttestationAuthorityHint(original["hint"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedHint); val.IsValid() && !isEmptyValue(val) {
+		transformed["hint"] = transformedHint
 	}
-	transformed["hint"] = transformedHint
+
 	return transformed, nil
 }
 
 func expandContainerAnalysisNoteAttestationAuthorityHint(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -281,8 +286,10 @@ func expandContainerAnalysisNoteAttestationAuthorityHint(v interface{}, d *schem
 	transformedHumanReadableName, err := expandContainerAnalysisNoteAttestationAuthorityHintHumanReadableName(original["human_readable_name"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedHumanReadableName); val.IsValid() && !isEmptyValue(val) {
+		transformed["humanReadableName"] = transformedHumanReadableName
 	}
-	transformed["humanReadableName"] = transformedHumanReadableName
+
 	return transformed, nil
 }
 

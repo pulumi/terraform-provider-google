@@ -51,6 +51,9 @@ func resourceBinaryAuthorizationPolicy() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: resourceBinaryAuthorizationPolicyImport,
 		},
+		DeprecationMessage: `This resource is in beta and will be removed from this provider.
+Use the BinaryAuthorizationPolicy resource in the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta resources.`,
 
 		Schema: map[string]*schema.Schema{
 			"default_admission_rule": {
@@ -81,10 +84,6 @@ func resourceBinaryAuthorizationPolicy() *schema.Resource {
 					},
 				},
 			},
-			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 			"admission_whitelist_patterns": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -106,6 +105,11 @@ func resourceBinaryAuthorizationPolicy() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
+						"enforcement_mode": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"ENFORCED_BLOCK_AND_AUDIT_LOG", "DRYRUN_AUDIT_LOG_ONLY", ""}, false),
+						},
 						"evaluation_mode": {
 							Type:         schema.TypeString,
 							Optional:     true,
@@ -119,11 +123,6 @@ func resourceBinaryAuthorizationPolicy() *schema.Resource {
 								Type: schema.TypeString,
 							},
 							Set: selfLinkNameHash,
-						},
-						"enforcement_mode": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"ENFORCED_BLOCK_AND_AUDIT_LOG", "DRYRUN_AUDIT_LOG_ONLY", ""}, false),
 						},
 					},
 				},
@@ -143,6 +142,10 @@ func resourceBinaryAuthorizationPolicy() *schema.Resource {
 					schema.SerializeResourceForHash(&buf, raw, resourceBinaryAuthorizationPolicy().Schema["cluster_admission_rules"].Elem.(*schema.Resource))
 					return hashcode.String(buf.String())
 				},
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -411,14 +414,19 @@ func expandBinaryAuthorizationPolicyAdmissionWhitelistPatterns(v interface{}, d 
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedNamePattern, err := expandBinaryAuthorizationPolicyAdmissionWhitelistPatternsNamePattern(original["name_pattern"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedNamePattern); val.IsValid() && !isEmptyValue(val) {
+			transformed["namePattern"] = transformedNamePattern
 		}
-		transformed["namePattern"] = transformedNamePattern
+
 		req = append(req, transformed)
 	}
 	return req, nil
@@ -495,7 +503,7 @@ func expandBinaryAuthorizationPolicyClusterAdmissionRulesEnforcementMode(v inter
 
 func expandBinaryAuthorizationPolicyDefaultAdmissionRule(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -505,18 +513,24 @@ func expandBinaryAuthorizationPolicyDefaultAdmissionRule(v interface{}, d *schem
 	transformedEvaluationMode, err := expandBinaryAuthorizationPolicyDefaultAdmissionRuleEvaluationMode(original["evaluation_mode"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedEvaluationMode); val.IsValid() && !isEmptyValue(val) {
+		transformed["evaluationMode"] = transformedEvaluationMode
 	}
-	transformed["evaluationMode"] = transformedEvaluationMode
+
 	transformedRequireAttestationsBy, err := expandBinaryAuthorizationPolicyDefaultAdmissionRuleRequireAttestationsBy(original["require_attestations_by"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRequireAttestationsBy); val.IsValid() && !isEmptyValue(val) {
+		transformed["requireAttestationsBy"] = transformedRequireAttestationsBy
 	}
-	transformed["requireAttestationsBy"] = transformedRequireAttestationsBy
+
 	transformedEnforcementMode, err := expandBinaryAuthorizationPolicyDefaultAdmissionRuleEnforcementMode(original["enforcement_mode"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedEnforcementMode); val.IsValid() && !isEmptyValue(val) {
+		transformed["enforcementMode"] = transformedEnforcementMode
 	}
-	transformed["enforcementMode"] = transformedEnforcementMode
+
 	return transformed, nil
 }
 

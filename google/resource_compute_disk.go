@@ -282,6 +282,32 @@ func resourceComputeDisk() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"disk_encryption_key": {
+				Type:             schema.TypeList,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: diskEncryptionKeyDiffSuppress,
+				MaxItems:         1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"raw_key": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"sha256": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"image": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: diskImageDiffSuppress,
+			},
 			"labels": {
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -292,22 +318,8 @@ func resourceComputeDisk() *schema.Resource {
 				Computed: true,
 				Optional: true,
 			},
-			"type": {
+			"snapshot": {
 				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
-				Default:          "pd-standard",
-			},
-			"image": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: diskImageDiffSuppress,
-			},
-			"zone": {
-				Type:             schema.TypeString,
-				Computed:         true,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
@@ -331,32 +343,6 @@ func resourceComputeDisk() *schema.Resource {
 					},
 				},
 			},
-			"disk_encryption_key": {
-				Type:             schema.TypeList,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: diskEncryptionKeyDiffSuppress,
-				MaxItems:         1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"raw_key": {
-							Type:     schema.TypeString,
-							Optional: true,
-							ForceNew: true,
-						},
-						"sha256": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-					},
-				},
-			},
-			"snapshot": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
-			},
 			"source_snapshot_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -375,6 +361,20 @@ func resourceComputeDisk() *schema.Resource {
 						},
 					},
 				},
+			},
+			"type": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Default:          "pd-standard",
+			},
+			"zone": {
+				Type:             schema.TypeString,
+				Computed:         true,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
 			"creation_timestamp": {
 				Type:     schema.TypeString,
@@ -1040,7 +1040,7 @@ func expandComputeDiskZone(v interface{}, d *schema.ResourceData, config *Config
 
 func expandComputeDiskSourceImageEncryptionKey(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -1050,13 +1050,17 @@ func expandComputeDiskSourceImageEncryptionKey(v interface{}, d *schema.Resource
 	transformedRawKey, err := expandComputeDiskSourceImageEncryptionKeyRawKey(original["raw_key"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRawKey); val.IsValid() && !isEmptyValue(val) {
+		transformed["rawKey"] = transformedRawKey
 	}
-	transformed["rawKey"] = transformedRawKey
+
 	transformedSha256, err := expandComputeDiskSourceImageEncryptionKeySha256(original["sha256"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedSha256); val.IsValid() && !isEmptyValue(val) {
+		transformed["sha256"] = transformedSha256
 	}
-	transformed["sha256"] = transformedSha256
+
 	return transformed, nil
 }
 
@@ -1097,7 +1101,7 @@ func expandComputeDiskSnapshot(v interface{}, d *schema.ResourceData, config *Co
 
 func expandComputeDiskSourceSnapshotEncryptionKey(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	l := v.([]interface{})
-	if len(l) == 0 {
+	if len(l) == 0 || l[0] == nil {
 		return nil, nil
 	}
 	raw := l[0]
@@ -1107,13 +1111,17 @@ func expandComputeDiskSourceSnapshotEncryptionKey(v interface{}, d *schema.Resou
 	transformedRawKey, err := expandComputeDiskSourceSnapshotEncryptionKeyRawKey(original["raw_key"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedRawKey); val.IsValid() && !isEmptyValue(val) {
+		transformed["rawKey"] = transformedRawKey
 	}
-	transformed["rawKey"] = transformedRawKey
+
 	transformedSha256, err := expandComputeDiskSourceSnapshotEncryptionKeySha256(original["sha256"], d, config)
 	if err != nil {
 		return nil, err
+	} else if val := reflect.ValueOf(transformedSha256); val.IsValid() && !isEmptyValue(val) {
+		transformed["sha256"] = transformedSha256
 	}
-	transformed["sha256"] = transformedSha256
+
 	return transformed, nil
 }
 

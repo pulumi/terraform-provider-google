@@ -23,6 +23,9 @@ description: |-
 
 A policy for container image binary authorization.
 
+~> **Warning:** This resource is in beta, and should be used with the terraform-provider-google-beta provider.
+See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta resources.
+
 To get more information about Policy, see:
 
 * [API documentation](https://cloud.google.com/binary-authorization/docs/reference/rest/)
@@ -32,22 +35,6 @@ To get more information about Policy, see:
 ## Example Usage
 
 ```hcl
-resource "google_container_analysis_note" "note" {
-  name = "test-attestor-note"
-  attestation_authority {
-    hint {
-      human_readable_name = "My attestor"
-    }
-  }
-}
-
-resource "google_binary_authorization_attestor" "attestor" {
-  name = "test-attestor"
-  attestation_authority_note {
-    note_reference = "${google_container_analysis_note.note.name}"
-  }
-}
-
 resource "google_binary_authorization_policy" "policy" {
   admission_whitelist_patterns {
     name_pattern= "gcr.io/google_containers/*"
@@ -63,6 +50,22 @@ resource "google_binary_authorization_policy" "policy" {
     evaluation_mode = "REQUIRE_ATTESTATION"
     enforcement_mode = "ENFORCED_BLOCK_AND_AUDIT_LOG"
     require_attestations_by = ["${google_binary_authorization_attestor.attestor.name}"]
+  }
+}
+
+resource "google_container_analysis_note" "note" {
+  name = "test-attestor-note"
+  attestation_authority {
+    hint {
+      human_readable_name = "My attestor"
+    }
+  }
+}
+
+resource "google_binary_authorization_attestor" "attestor" {
+  name = "test-attestor"
+  attestation_authority_note {
+    note_reference = "${google_container_analysis_note.note.name}"
   }
 }
 ```
@@ -108,17 +111,21 @@ The `default_admission_rule` block supports:
 
 * `admission_whitelist_patterns` -
   (Optional)
-  Admission policy whitelisting. A matching admission request will
-  always be permitted. This feature is typically used to exclude Google
-  or third-party infrastructure images from Binary Authorization
-  policies.  Structure is documented below.
+  A whitelist of image patterns to exclude from admission rules. If an
+  image's name matches a whitelist pattern, the image's admission
+  requests will always be permitted regardless of your admission rules.  Structure is documented below.
 
 * `cluster_admission_rules` -
   (Optional)
-  Admission policy whitelisting. A matching admission request will
-  always be permitted. This feature is typically used to exclude Google
-  or third-party infrastructure images from Binary Authorization
-  policies.
+  Per-cluster admission rules. An admission rule specifies either that
+  all container images used in a pod creation request must be attested
+  to by one or more attestors, that all pod creations will be allowed,
+  or that all pod creations will be denied. There can be at most one
+  admission rule per cluster spec.
+
+  Identifier format: `{{location}}.{{clusterId}}`.
+  A location is either a compute zone (e.g. `us-central1-a`) or a region
+  (e.g. `us-central1`).  Structure is documented below.
 * `project` - (Optional) The ID of the project in which the resource belongs.
     If it is not provided, the provider project is used.
 
@@ -133,6 +140,8 @@ The `admission_whitelist_patterns` block supports:
   part.
 
 The `cluster_admission_rules` block supports:
+
+* `cluster` - (Required) The identifier for this object. Format specified above.
 
 * `evaluation_mode` -
   (Optional)

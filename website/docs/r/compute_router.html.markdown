@@ -23,6 +23,7 @@ description: |-
 
 Represents a Router resource.
 
+
 To get more information about Router, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/rest/v1/routers)
@@ -32,11 +33,6 @@ To get more information about Router, see:
 ## Example Usage
 
 ```hcl
-resource "google_compute_network" "foobar" {
-  name                    = "my-network"
-  auto_create_subnetworks = false
-}
-
 resource "google_compute_router" "foobar" {
   name    = "my-router"
   network = "${google_compute_network.foobar.name}"
@@ -51,6 +47,11 @@ resource "google_compute_router" "foobar" {
       range = "6.7.0.0/16"
     }
   }
+}
+
+resource "google_compute_network" "foobar" {
+  name = "my-network"
+  auto_create_subnetworks = false
 }
 ```
 

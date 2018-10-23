@@ -148,6 +148,9 @@ func resourceComputeFirewall() *schema.Resource {
 			"enable_logging": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Deprecated: `This field is in beta and will be removed from this provider.
+Use the terraform-provider-google-beta provider to continue using it.
+See https://terraform.io/docs/providers/google/provider_versions.html for more details on beta fields.`,
 			},
 			"priority": {
 				Type:         schema.TypeInt,
@@ -744,19 +747,26 @@ func expandComputeFirewallAllow(v interface{}, d *schema.ResourceData, config *C
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedProtocol, err := expandComputeFirewallAllowProtocol(original["protocol"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedProtocol); val.IsValid() && !isEmptyValue(val) {
+			transformed["IPProtocol"] = transformedProtocol
 		}
-		transformed["IPProtocol"] = transformedProtocol
+
 		transformedPorts, err := expandComputeFirewallAllowPorts(original["ports"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedPorts); val.IsValid() && !isEmptyValue(val) {
+			transformed["ports"] = transformedPorts
 		}
-		transformed["ports"] = transformedPorts
+
 		req = append(req, transformed)
 	}
 	return req, nil
@@ -775,19 +785,26 @@ func expandComputeFirewallDeny(v interface{}, d *schema.ResourceData, config *Co
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			continue
+		}
 		original := raw.(map[string]interface{})
 		transformed := make(map[string]interface{})
 
 		transformedProtocol, err := expandComputeFirewallDenyProtocol(original["protocol"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedProtocol); val.IsValid() && !isEmptyValue(val) {
+			transformed["IPProtocol"] = transformedProtocol
 		}
-		transformed["IPProtocol"] = transformedProtocol
+
 		transformedPorts, err := expandComputeFirewallDenyPorts(original["ports"], d, config)
 		if err != nil {
 			return nil, err
+		} else if val := reflect.ValueOf(transformedPorts); val.IsValid() && !isEmptyValue(val) {
+			transformed["ports"] = transformedPorts
 		}
-		transformed["ports"] = transformedPorts
+
 		req = append(req, transformed)
 	}
 	return req, nil

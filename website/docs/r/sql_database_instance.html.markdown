@@ -78,7 +78,7 @@ data "null_data_source" "auth_netw_postgres_allowed_1" {
 
   inputs = {
     name  = "apps-${count.index + 1}"
-    value = "${element(google_compute_instance.apps.*.network_interface.0.access_config.0.assigned_nat_ip, count.index)}"
+    value = "${element(google_compute_instance.apps.*.network_interface.0.access_config.0.nat_ip, count.index)}"
   }
 }
 
@@ -129,7 +129,7 @@ The following arguments are supported:
     use. Can be `MYSQL_5_6`, `MYSQL_5_7` or `POSTGRES_9_6` for second-generation
     instances, or `MYSQL_5_5` or `MYSQL_5_6` for first-generation instances.
     See [Second Generation Capabilities](https://cloud.google.com/sql/docs/1st-2nd-gen-differences)
-    for more information. `POSTGRES_9_6` support is in [Beta](/docs/providers/google/index.html#beta-features).
+    for more information. `POSTGRES_9_6` support is in beta.
 
 * `name` - (Optional, Computed) The name of the instance. If the name is left
     blank, Terraform will randomly generate one when the instance is first
@@ -190,7 +190,7 @@ The optional `settings.database_flags` sublist supports:
 The optional `settings.backup_configuration` subblock supports:
 
 * `binary_log_enabled` - (Optional) True if binary logging is enabled. If
-    `logging` is false, this must be as well.
+    `logging` is false, this must be as well. Cannot be used with Postgres.
 
 * `enabled` - (Optional) True if backup configuration is enabled.
 

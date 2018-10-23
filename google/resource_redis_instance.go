@@ -76,18 +76,24 @@ func resourceRedisInstance() *schema.Resource {
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"redis_configs": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
 			"location_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
 			},
+			"redis_configs": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"redis_version": {
+				Type:     schema.TypeString,
+				Computed: true,
+				Optional: true,
+				ForceNew: true,
+			},
+			"region": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
@@ -105,12 +111,6 @@ func resourceRedisInstance() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"BASIC", "STANDARD_HA", ""}, false),
 				Default:      "BASIC",
-			},
-			"region": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Optional: true,
-				ForceNew: true,
 			},
 			"create_time": {
 				Type:     schema.TypeString,
@@ -208,19 +208,8 @@ func resourceRedisInstanceCreate(d *schema.ResourceData, meta interface{}) error
 	} else if v, ok := d.GetOkExists("tier"); !isEmptyValue(reflect.ValueOf(tierProp)) && (ok || !reflect.DeepEqual(v, tierProp)) {
 		obj["tier"] = tierProp
 	}
-	regionProp, err := expandRedisInstanceRegion(d.Get("region"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("region"); !isEmptyValue(reflect.ValueOf(regionProp)) && (ok || !reflect.DeepEqual(v, regionProp)) {
-		obj["region"] = regionProp
-	}
 
-	obj, err = resourceRedisInstanceEncoder(d, meta, obj)
-	if err != nil {
-		return err
-	}
-
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1beta1/projects/{{project}}/locations/{{region}}/instances?instanceId={{name}}")
+	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances?instanceId={{name}}")
 	if err != nil {
 		return err
 	}
@@ -266,7 +255,7 @@ func resourceRedisInstanceCreate(d *schema.ResourceData, meta interface{}) error
 func resourceRedisInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1beta1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -274,11 +263,6 @@ func resourceRedisInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	res, err := sendRequest(config, "GET", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("RedisInstance %q", d.Id()))
-	}
-
-	res, err = resourceRedisInstanceDecoder(d, meta, res)
-	if err != nil {
-		return err
 	}
 
 	if err := d.Set("alternative_location_id", flattenRedisInstanceAlternativeLocationId(res["alternativeLocationId"])); err != nil {
@@ -324,9 +308,6 @@ func resourceRedisInstanceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading Instance: %s", err)
 	}
 	if err := d.Set("tier", flattenRedisInstanceTier(res["tier"])); err != nil {
-		return fmt.Errorf("Error reading Instance: %s", err)
-	}
-	if err := d.Set("region", flattenRedisInstanceRegion(res["region"])); err != nil {
 		return fmt.Errorf("Error reading Instance: %s", err)
 	}
 	project, err := getProject(d, config)
@@ -410,16 +391,8 @@ func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error
 	} else if v, ok := d.GetOkExists("tier"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, tierProp)) {
 		obj["tier"] = tierProp
 	}
-	regionProp, err := expandRedisInstanceRegion(d.Get("region"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("region"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, regionProp)) {
-		obj["region"] = regionProp
-	}
 
-	obj, err = resourceRedisInstanceEncoder(d, meta, obj)
-
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1beta1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -474,7 +447,7 @@ func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error
 func resourceRedisInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1beta1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -597,10 +570,6 @@ func flattenRedisInstanceTier(v interface{}) interface{} {
 	return v
 }
 
-func flattenRedisInstanceRegion(v interface{}) interface{} {
-	return v
-}
-
 func expandRedisInstanceAlternativeLocationId(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
@@ -671,23 +640,4 @@ func expandRedisInstanceReservedIpRange(v interface{}, d *schema.ResourceData, c
 
 func expandRedisInstanceTier(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
-}
-
-func expandRedisInstanceRegion(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
-	return v, nil
-}
-
-func resourceRedisInstanceEncoder(d *schema.ResourceData, meta interface{}, obj map[string]interface{}) (map[string]interface{}, error) {
-	delete(obj, "region")
-	return obj, nil
-}
-
-func resourceRedisInstanceDecoder(d *schema.ResourceData, meta interface{}, res map[string]interface{}) (map[string]interface{}, error) {
-	config := meta.(*Config)
-	region, err := getRegion(d, config)
-	if err != nil {
-		return nil, err
-	}
-	res["region"] = region
-	return res, nil
 }

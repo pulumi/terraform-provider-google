@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"google.golang.org/api/dns/v1"
-	dnsBeta "google.golang.org/api/dns/v1beta2"
 )
 
 func resourceDnsManagedZone() *schema.Resource {
@@ -16,7 +15,7 @@ func resourceDnsManagedZone() *schema.Resource {
 		Update: resourceDnsManagedZoneUpdate,
 		Delete: resourceDnsManagedZoneDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceDnsManagedZoneImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"dns_name": &schema.Schema{
@@ -126,7 +125,7 @@ func resourceDnsManagedZoneUpdate(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
-	zone := &dnsBeta.ManagedZone{
+	zone := &dns.ManagedZone{
 		Name:        d.Get("name").(string),
 		DnsName:     d.Get("dns_name").(string),
 		Description: d.Get("description").(string),
@@ -136,12 +135,12 @@ func resourceDnsManagedZoneUpdate(d *schema.ResourceData, meta interface{}) erro
 		zone.Labels = expandLabels(d)
 	}
 
-	op, err := config.clientDnsBeta.ManagedZones.Patch(project, d.Id(), zone).Do()
+	op, err := config.clientDns.ManagedZones.Patch(project, d.Id(), zone).Do()
 	if err != nil {
 		return err
 	}
 
-	err = dnsOperationWait(config.clientDnsBeta, op, project, "Updating DNS Managed Zone")
+	err = dnsOperationWait(config.clientDns, op, project, "Updating DNS Managed Zone")
 	if err != nil {
 		return err
 	}
@@ -164,4 +163,20 @@ func resourceDnsManagedZoneDelete(d *schema.ResourceData, meta interface{}) erro
 
 	d.SetId("")
 	return nil
+}
+
+func resourceDnsManagedZoneImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+	parseImportId([]string{"projects/(?P<project>[^/]+)/managedZones/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/managedZones/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)"}, d, config)
+
+	// Replace import id for the resource id
+	id, err := replaceVars(d, config, "{{name}}")
+	if err != nil {
+		return nil, fmt.Errorf("Error constructing id: %s", err)
+	}
+	d.SetId(id)
+
+	return []*schema.ResourceData{d}, nil
 }

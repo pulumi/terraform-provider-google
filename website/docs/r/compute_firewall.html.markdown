@@ -35,6 +35,7 @@ outgoing traffic and a default "deny" for incoming traffic. For all
 networks except the default network, you must create any firewall rules
 you need.
 
+
 To get more information about Firewall, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/latest/firewalls)
@@ -44,10 +45,6 @@ To get more information about Firewall, see:
 ## Example Usage
 
 ```hcl
-resource "google_compute_network" "default" {
-  name = "test-network"
-}
-
 resource "google_compute_firewall" "default" {
   name    = "test-firewall"
   network = "${google_compute_network.default.name}"
@@ -62,6 +59,10 @@ resource "google_compute_firewall" "default" {
   }
 
   source_tags = ["web"]
+}
+
+resource "google_compute_network" "default" {
+  name = "test-network"
 }
 ```
 
@@ -128,7 +129,8 @@ The following arguments are supported:
   (Optional)
   This field denotes whether to enable logging for a particular
   firewall rule. If logging is enabled, logs will be exported to
-  Stackdriver.
+  Stackdriver.  This property is in beta, and should be used with the terraform-provider-google-beta provider.
+  See [Provider Versions](https://terraform.io/docs/providers/google/provider_versions.html) for more details on beta fields.
 
 * `priority` -
   (Optional)

@@ -27,6 +27,7 @@ Autoscalers allow you to automatically scale virtual machine instances in
 managed instance groups according to an autoscaling policy that you
 define.
 
+
 To get more information about Autoscaler, see:
 
 * [API documentation](https://cloud.google.com/compute/docs/reference/rest/v1/autoscalers)
@@ -36,15 +37,31 @@ To get more information about Autoscaler, see:
 ## Example Usage
 
 ```hcl
+resource "google_compute_autoscaler" "foobar" {
+  name   = "my-autoscaler"
+  zone   = "us-central1-f"
+  target = "${google_compute_instance_group_manager.foobar.self_link}"
+
+  autoscaling_policy = {
+    max_replicas    = 5
+    min_replicas    = 1
+    cooldown_period = 60
+
+    cpu_utilization {
+      target = 0.5
+    }
+  }
+}
+
 resource "google_compute_instance_template" "foobar" {
-  name           = "foobar"
+  name           = "my-instance-template"
   machine_type   = "n1-standard-1"
   can_ip_forward = false
 
   tags = ["foo", "bar"]
 
   disk {
-    source_image = "debian-cloud/debian-8"
+    source_image = "${data.google_compute_image.debian_9.self_link}"
   }
 
   network_interface {
@@ -61,11 +78,11 @@ resource "google_compute_instance_template" "foobar" {
 }
 
 resource "google_compute_target_pool" "foobar" {
-  name = "foobar"
+  name = "my-target-pool"
 }
 
 resource "google_compute_instance_group_manager" "foobar" {
-  name = "foobar"
+  name = "my-igm"
   zone = "us-central1-f"
 
   instance_template  = "${google_compute_instance_template.foobar.self_link}"
@@ -73,20 +90,9 @@ resource "google_compute_instance_group_manager" "foobar" {
   base_instance_name = "foobar"
 }
 
-resource "google_compute_autoscaler" "foobar" {
-  name   = "scaler"
-  zone   = "us-central1-f"
-  target = "${google_compute_instance_group_manager.foobar.self_link}"
-
-  autoscaling_policy = {
-    max_replicas    = 5
-    min_replicas    = 1
-    cooldown_period = 60
-
-    cpu_utilization {
-      target = 0.5
-    }
-  }
+data "google_compute_image" "debian_9" {
+	family  = "debian-9"
+	project = "debian-cloud"
 }
 ```
 
