@@ -171,8 +171,7 @@ func resourceSqlUserUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		mutexKV.Lock(instanceMutexKey(project, instance))
 		defer mutexKV.Unlock(instanceMutexKey(project, instance))
-		op, err := config.clientSqlAdmin.Users.Update(project, instance, host, name,
-			user).Do()
+		op, err := config.clientSqlAdmin.Users.Update(project, instance, name, user).Host(host).Do()
 
 		if err != nil {
 			return fmt.Errorf("Error, failed to update"+

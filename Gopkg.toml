@@ -51,7 +51,7 @@
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
-  version = "0.11.7"
+  revision = "35d82b055591e9d47a254e68754216d8849ba67a"
 
 [[constraint]]
   branch = "master"
@@ -67,7 +67,7 @@
 
 [[constraint]]
   name = "google.golang.org/api"
-  revision = "087779f1d2c96357d4c45bd04c4d10d7b5f22736"
+  revision = "19ff8768a5c0b8e46ea281065664787eefc24121"
 
 [prune]
   go-tests = true

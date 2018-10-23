@@ -112,6 +112,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/dustinkirkland/golang-petname"
+  packages = ["."]
+  revision = "d3c2ba80e75eeef10c5cf2fc76d2c809637376b3"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
@@ -270,8 +276,7 @@
     "tfdiags",
     "version"
   ]
-  revision = "41e50bd32a8825a84535e353c3674af8ce799161"
-  version = "v0.11.7"
+  revision = "35d82b055591e9d47a254e68754216d8849ba67a"
 
 [[projects]]
   name = "github.com/hashicorp/vault"
@@ -381,6 +386,12 @@
   packages = ["."]
   revision = "c8136b55823dc6af966d084a06056c5575f6400f"
   version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/terraform-providers/terraform-provider-random"
+  packages = ["random"]
+  revision = "09c8354edefba5483d208f55b5112c84ebf9e773"
+  version = "v2.0.0"
 
 [[projects]]
   name = "github.com/ulikunitz/xz"
@@ -522,6 +533,7 @@
     "discovery/v1",
     "dns/v1",
     "dns/v1beta2",
+    "file/v1beta1",
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
@@ -544,7 +556,7 @@
     "transport/grpc",
     "transport/http"
   ]
-  revision = "087779f1d2c96357d4c45bd04c4d10d7b5f22736"
+  revision = "19ff8768a5c0b8e46ea281065664787eefc24121"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -616,6 +628,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "055dcbea8db2c05306797f7a3908b4b116dc19aa1800342bc83f8212c3628b03"
+  inputs-digest = "29187e818e4b86d880befc91b2f5b6b2e6e0281ecb7aa3a1034c3e1e78cba561"
   solver-name = "gps-cdcl"
   solver-version = 1
